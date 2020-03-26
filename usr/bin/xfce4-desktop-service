@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+#  xfce4-desktop-service
+#
+#  Copyright 2020 Thomas Castleman <contact@draugeros.org>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#
+#
+import dbus
+import dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
+from subprocess import Popen
+from gi.repository import GLib,GObject
+from sys import argv, stderr
+from shutil import copyfile, rmtree
+import threading
+import os
+
+def xdg_open(uri):
+	args = ['xdg-open']
+	path = str(uri)
+	if path.startswith('file://'):
+		path = path[7:]
+	if ("%20" in path):
+		path = path.split("%20")
+		path = " ".join(path)
+	args.append(path)
+	if os.fork() == 0:
+		Popen(args)
+		os._exit(0)
+	else:
+		os.wait()
+
+
+def File_Manager1():
+	DBusGMainLoop(set_as_default=True)
+
+	session_bus = dbus.SessionBus()
+	name = dbus.service.BusName("org.xfce.FileManager1", session_bus)
+	object = FmObject(session_bus, '/org/xfce/FileManager1')
+
+	mainloop = GLib.MainLoop()
+	mainloop.run()
+
+def File_Manager():
+	DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SessionBus()
+	name = dbus.service.BusName("org.xfce.FileManager", bus)
+	object = signal_handlers(bus, '/org/xfce/FileManager')
+
+	mainloop = GLib.MainLoop()
+	mainloop.run()
+
+def Trash_Manager():
+	DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SessionBus()
+	name = dbus.service.BusName("org.xfce.Trash", bus)
+	object = Trash(bus, '/org/xfce/Trash')
+
+	mainloop = GLib.MainLoop()
+	mainloop.run()
+
+class FmObject(dbus.service.Object):
+
+    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+    def ShowFolders(self, uris, startupId):
+        xdg_open(uris[0])
+
+    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+    def ShowItems(self, uris, startupId):
+        xdg_open(uris[0])
+
+    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+    def ShowItemProperties(self, uris, startupId):
+        xdg_open(uris[0])
+
+    @dbus.service.method("org.xfce.FileManager1", in_signature='', out_signature='')
+    def Exit(self):
+        mainloop.quit()
+
+
+
+
+class signal_handlers(dbus.service.Object):
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+	def Launch(self, uri, display=None, startup_id=None):
+		xdg_open(uri)
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='ssasss', out_signature='')
+	def Execute(self, working_directory=None, uri=None, filenames=None, display=None, startup_id=None):
+		xdg_open(uri)
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
+	def LaunchFiles(self, working_directory, filenames, display, startup_id):
+		xdg_open(uri)
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+	def DisplayFolder(self, uri, display=None, startup_id=None):
+		xdg_open(uri)
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sasasss', out_signature='')
+	def CopyTo(self, working_directory, source_files, target_files, display, startup_id):
+		for each in range(len(source_files)):
+			if (source_files[each][0:7] == "file://"):
+				source_files[each] = list(str(source_files[each]))
+				x = 0
+				while x < 7:
+					del(source_files[each][0])
+					x = x + 1
+				source_files[each] = "".join(source_files[each])
+			if ("%20" in source_files[each]):
+				source_files[each] = source_files[each].split("%20")
+				source_files[each] = " ".join(source_files[each])
+			if (target_files[each][0:7] == "file://"):
+				target_files[each] = list(str(target_files[each]))
+				x = 0
+				while x < 7:
+					del(target_files[each][0])
+					x = x + 1
+				target_files[each] = "".join(target_files[each])
+			if ("%20" in target_files[each]):
+				target_files[each] = target_files[each].split("%20")
+				target_files[each] = " ".join(source_files[each])
+			copyfile(source_files[each], target_files[each])
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
+	def CreateFile(self, parent_directory, content_type, display, startup_id):
+		print(content_type)
+		if (parent_directory[0:7] == "file://"):
+			parent_directory = list(str(parent_directory))
+			x = 0
+			while x < 7:
+				del(parent_directory[0])
+				x = x + 1
+			parent_directory = "".join(parent_directory)
+		if (content_type == "inode/directory"):
+			if (parent_directory[len(parent_directory) - 1] == "/"):
+				os.mkdir(parent_directory + "Untitled Folder")
+			else:
+				os.mkdir(parent_directory + "/Untitled Folder")
+		else:
+			if (parent_directory[len(parent_directory) - 1] == "/"):
+				with open(parent_directory + "Untitled Document", "w+") as new_file:
+					new_file.write("")
+			else:
+				with open(parent_directory + "/Untitled Document", "w+") as new_file:
+					new_file.write("")
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
+	def UnlinkFiles(self, working_directory, filenames, display, startup_id):
+		for each in filenames:
+			if (each[0:7] == "file://"):
+				each = list(str(each))
+				x = 0
+				while x < 7:
+					del(each[0])
+					x = x + 1
+				each = "".join(each)
+			if ("%20" in each):
+				each = each.split("%20")
+				each = " ".join(each)
+			try:
+				os.remove(each)
+			except IsADirectoryError:
+				rmtree(each)
+
+
+class Trash(dbus.service.Object):
+
+	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
+	def DisplayTrash(self, display=None, startup_id=None):
+		Popen(["xdg-open","trash://"])
+
+	@dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
+	def MoveToTrash(self, filenames, display=None, startup_id=None):
+		args = ["gio", "trash"]
+		path = str(uri)
+		if path.startswith('file://'):
+			path = path[7:]
+		args.append(path)
+		if os.fork() == 0:
+			Popen(args)
+			os._exit(0)
+		else:
+			os.wait()
+
+	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
+	def EmptyTrash(self, display=None, startup_id=None):
+		Popen(["gio", "trash", "--empty"])
+
+
+# Make it easier for us to print to stderr
+def eprint(*args, **kwargs):
+	print(*args, file=stderr, **kwargs)
+
+def launch_all():
+	FM = threading.Thread(target=File_Manager)
+	FM1 = threading.Thread(target=File_Manager1)
+	T = threading.Thread(target=Trash_Manager)
+
+	FM.start()
+	FM1.start()
+	T.start()
+
+	FM.join()
+	FM1.join()
+	T.join()
+
+if __name__ == '__main__':
+	#get length of argv
+	argc = len(argv)
+	VERSION = "0.0.4-alpha0"
+	HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
+	if (argc <= 1):
+		launch_all()
+	elif ((argv[1] == "-h") or (argv[1] == "--help")):
+		print(HELP)
+	elif ((argv[1] == "-v") or (argv[1] == "--version")):
+		print(VERSION)
+	elif ((argv[1] == "-b") or (argv[1] == "--background")):
+		Popen("xfce4-desktop-service")
+	else:
+		eprint("%s :  argument not recognized" % (argv[1]))
+		print(HELP)
+
