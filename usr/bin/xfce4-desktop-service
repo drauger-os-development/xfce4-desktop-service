@@ -110,7 +110,8 @@ class signal_handlers(dbus.service.Object):
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
 	def LaunchFiles(self, working_directory, filenames, display, startup_id):
-		xdg_open(uri)
+		for each in filenames:
+			xdg_open(each)
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
 	def DisplayFolder(self, uri, display=None, startup_id=None):
