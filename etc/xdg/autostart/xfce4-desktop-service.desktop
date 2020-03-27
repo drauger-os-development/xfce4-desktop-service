@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=xfce4-desktop-service
+Version=1.0
+Exec=/usr/bin/xfce4-desktop-service --background
+Type=Application
+Terminal=false
+StartupNotify=false
+Encoding=UTF-8
+Categories=Accessibility;System;Utility;
