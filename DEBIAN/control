@@ -1,5 +1,5 @@
 Package: xfce4-desktop-service
-Version: 0.0.4-alpha0
+Version: 0.0.5-alpha0
 Maintainer: Thomas Castleman <contact@draugeros.org>
 Section: xfce
 Source: https://github.com/drauger-os-developement/xfce4-desktop-service

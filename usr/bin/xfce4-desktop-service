@@ -228,7 +228,7 @@ def launch_all():
 if __name__ == '__main__':
 	#get length of argv
 	argc = len(argv)
-	VERSION = "0.0.4-alpha0"
+	VERSION = "0.0.5-alpha0"
 	HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
 	if (argc <= 1):
 		launch_all()
