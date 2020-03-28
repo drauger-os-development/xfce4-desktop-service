@@ -193,15 +193,18 @@ class Trash(dbus.service.Object):
 	@dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
 	def MoveToTrash(self, filenames, display=None, startup_id=None):
 		args = ["gio", "trash"]
-		path = str(uri)
-		if path.startswith('file://'):
-			path = path[7:]
-		args.append(path)
-		if os.fork() == 0:
-			Popen(args)
-			os._exit(0)
-		else:
-			os.wait()
+		for uri in filenames:
+			path = str(uri)
+			if path.startswith('file://'):
+				path = path[7:]
+			args.append(path)
+			if os.fork() == 0:
+				Popen(args)
+				args = ["gio", "trash"]
+				os._exit(0)
+			else:
+				os.wait()
+			args = ["gio", "trash"]
 
 	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
 	def EmptyTrash(self, display=None, startup_id=None):
