@@ -25,57 +25,13 @@ import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 from subprocess import Popen
-from gi.repository import GLib,GObject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import GLib, GObject, Gtk, Gdk
 from sys import argv, stderr
 from shutil import copyfile, rmtree
 import threading
 import os
-
-def xdg_open(uri):
-	args = ['xdg-open']
-	path = str(uri)
-	if path.startswith('file://'):
-		path = path[7:]
-	if ("%20" in path):
-		path = path.split("%20")
-		path = " ".join(path)
-	args.append(path)
-	if os.fork() == 0:
-		Popen(args)
-		os._exit(0)
-	else:
-		os.wait()
-
-
-def File_Manager1():
-	DBusGMainLoop(set_as_default=True)
-
-	session_bus = dbus.SessionBus()
-	name = dbus.service.BusName("org.xfce.FileManager1", session_bus)
-	object = FmObject(session_bus, '/org/xfce/FileManager1')
-
-	mainloop = GLib.MainLoop()
-	mainloop.run()
-
-def File_Manager():
-	DBusGMainLoop(set_as_default=True)
-
-	bus = dbus.SessionBus()
-	name = dbus.service.BusName("org.xfce.FileManager", bus)
-	object = signal_handlers(bus, '/org/xfce/FileManager')
-
-	mainloop = GLib.MainLoop()
-	mainloop.run()
-
-def Trash_Manager():
-	DBusGMainLoop(set_as_default=True)
-
-	bus = dbus.SessionBus()
-	name = dbus.service.BusName("org.xfce.Trash", bus)
-	object = Trash(bus, '/org/xfce/Trash')
-
-	mainloop = GLib.MainLoop()
-	mainloop.run()
 
 class FmObject(dbus.service.Object):
 
@@ -144,7 +100,6 @@ class signal_handlers(dbus.service.Object):
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
 	def CreateFile(self, parent_directory, content_type, display, startup_id):
-		print(content_type)
 		if (parent_directory[0:7] == "file://"):
 			parent_directory = list(str(parent_directory))
 			x = 0
@@ -152,17 +107,23 @@ class signal_handlers(dbus.service.Object):
 				del(parent_directory[0])
 				x = x + 1
 			parent_directory = "".join(parent_directory)
+		name = show_GUI(content_type)
+		if (name[len(name) - 1] == 1):
+			return None
+		else:
+			name = name[0]
+			print(name)
 		if (content_type == "inode/directory"):
 			if (parent_directory[len(parent_directory) - 1] == "/"):
-				os.mkdir(parent_directory + "Untitled Folder")
+				os.mkdir(parent_directory + "/" + name)
 			else:
-				os.mkdir(parent_directory + "/Untitled Folder")
+				os.mkdir(parent_directory + "/" + name)
 		else:
 			if (parent_directory[len(parent_directory) - 1] == "/"):
-				with open(parent_directory + "Untitled Document", "w+") as new_file:
+				with open(parent_directory + "/" + name, "w+") as new_file:
 					new_file.write("")
 			else:
-				with open(parent_directory + "/Untitled Document", "w+") as new_file:
+				with open(parent_directory + "/" + name, "w+") as new_file:
 					new_file.write("")
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
@@ -182,6 +143,29 @@ class signal_handlers(dbus.service.Object):
 				os.remove(each)
 			except IsADirectoryError:
 				rmtree(each)
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+	def RenameFile(self, filename, display, startup_id):
+		filename = str(filename)
+		if filename.startswith('file://'):
+			path = filename[7:]
+		if ("%20" in path):
+			path = path.split("%20")
+			path = " ".join(path)
+		if (os.path.isdir(filename)):
+			content_type = "inode/directory"
+		else:
+			content_type = "file"
+		name = show_GUI(content_type)
+		if (name[len(name) - 1] == 1):
+			return None
+		else:
+			name = name[0]
+		new_path = path.split("/")
+		del(new_path[len(new_path) - 1])
+		new_path = "/".join(new_path)
+		new_path = new_path + "/" + name
+		os.rename(path, new_path)
 
 
 class Trash(dbus.service.Object):
@@ -210,6 +194,106 @@ class Trash(dbus.service.Object):
 	def EmptyTrash(self, display=None, startup_id=None):
 		Popen(["gio", "trash", "--empty"])
 
+class GUI(Gtk.Window):
+	def __init__(self, content_type):
+		if (content_type == "inode/directory"):
+			content_type = "directory"
+		else:
+			content_type = "file"
+
+		# Initialize the Window
+		Gtk.Window.__init__(self, title="Desktop Service")
+		self.grid=Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+		self.add(self.grid)
+		self.set_icon_from_file("/usr/share/icons/Drauger/scalable/menus/drauger_os-logo.svg")
+
+		self.label = Gtk.Label()
+		self.label.set_markup("""
+	What would you like to name this %s?\t""" % (content_type))
+		self.label.set_justify(Gtk.Justification.LEFT)
+		self.grid.attach(self.label, 1, 1, 3, 1)
+
+		self.name = Gtk.Entry()
+		self.grid.attach(self.name, 1, 2, 3, 1)
+
+		self.button1 = Gtk.Button.new_with_label("Okay -->")
+		self.button1.connect("clicked", self.done)
+		self.grid.attach(self.button1, 3, 3, 1, 1)
+
+		self.button2 = Gtk.Button.new_with_label("Exit")
+		self.button2.connect("clicked", self.exit)
+		self.grid.attach(self.button2, 1, 3, 1, 1)
+
+		self.set_default(self.button1)
+
+	def done(self, button):
+		self.set_name = [self.name.get_text(),0]
+		self.destroy()
+		Gtk.main_quit("delete-event")
+		return self.set_name
+
+	def exit(self, button):
+		self.set_name = [1]
+		self.destroy()
+		Gtk.main_quit("delete-event")
+		return self.set_name
+
+def xdg_open(uri):
+	args = ['xdg-open']
+	path = str(uri)
+	if path.startswith('file://'):
+		path = path[7:]
+	if ("%20" in path):
+		path = path.split("%20")
+		path = " ".join(path)
+	args.append(path)
+	if os.fork() == 0:
+		Popen(args)
+		os._exit(0)
+	else:
+		os.wait()
+
+
+def File_Manager1():
+	DBusGMainLoop(set_as_default=True)
+
+	session_bus = dbus.SessionBus()
+	name = dbus.service.BusName("org.xfce.FileManager1", session_bus)
+	object = FmObject(session_bus, '/org/xfce/FileManager1')
+
+	mainloop = GLib.MainLoop()
+	mainloop.run()
+
+def File_Manager():
+	DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SessionBus()
+	name = dbus.service.BusName("org.xfce.FileManager", bus)
+	object = signal_handlers(bus, '/org/xfce/FileManager')
+
+	mainloop = GLib.MainLoop()
+	mainloop.run()
+
+def Trash_Manager():
+	DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SessionBus()
+	name = dbus.service.BusName("org.xfce.Trash", bus)
+	object = Trash(bus, '/org/xfce/Trash')
+
+	mainloop = GLib.MainLoop()
+	mainloop.run()
+
+def show_GUI(content_type):
+	window = GUI(content_type)
+	window.set_decorated(True)
+	window.set_resizable(False)
+	window.set_position(Gtk.WindowPosition.CENTER)
+	window.connect("delete-event", GUI.exit)
+	window.show_all()
+	Gtk.main()
+	return window.set_name
+
 
 # Make it easier for us to print to stderr
 def eprint(*args, **kwargs):
@@ -231,7 +315,7 @@ def launch_all():
 if __name__ == '__main__':
 	#get length of argv
 	argc = len(argv)
-	VERSION = "0.0.5-alpha0"
+	VERSION = "0.0.6-alpha0"
 	HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
 	if (argc <= 1):
 		launch_all()

@@ -1,8 +1,7 @@
 Package: xfce4-desktop-service
-Version: 0.0.5-alpha0
+Version: 0.0.6-alpha0
 Maintainer: Thomas Castleman <contact@draugeros.org>
 Section: xfce
-Source: https://github.com/drauger-os-developement/xfce4-desktop-service
 Architecture: all
 Priority: optional
 Depends: python3, python3-dbus, xdg-utils, libglib2.0-bin, xfdesktop4
