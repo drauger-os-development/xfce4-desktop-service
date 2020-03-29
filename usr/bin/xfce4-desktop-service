@@ -151,10 +151,12 @@ class signal_handlers(dbus.service.Object):
 		filename = str(filename)
 		if filename.startswith('file://'):
 			path = filename[7:]
+		else:
+			path = filename
 		if ("%20" in path):
 			path = path.split("%20")
 			path = " ".join(path)
-		if (os.path.isdir(filename)):
+		if (os.path.isdir(path)):
 			content_type = "inode/directory"
 		else:
 			content_type = "file"
