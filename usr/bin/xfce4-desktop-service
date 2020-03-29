@@ -57,11 +57,11 @@ class FmObject(dbus.service.Object):
 class signal_handlers(dbus.service.Object):
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
-	def Launch(self, uri, display=None, startup_id=None):
+	def Launch(self, uri, display, startup_id):
 		xdg_open(uri)
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='ssasss', out_signature='')
-	def Execute(self, working_directory=None, uri=None, filenames=None, display=None, startup_id=None):
+	def Execute(self, working_directory, uri, filenames, display, startup_id):
 		xdg_open(uri)
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
@@ -70,7 +70,7 @@ class signal_handlers(dbus.service.Object):
 			xdg_open(each)
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
-	def DisplayFolder(self, uri, display=None, startup_id=None):
+	def DisplayFolder(self, uri, display, startup_id):
 		xdg_open(uri)
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sasasss', out_signature='')
@@ -115,7 +115,6 @@ class signal_handlers(dbus.service.Object):
 			return None
 		else:
 			name = name[0]
-			print(name)
 		if (content_type == "inode/directory"):
 			if (parent_directory[len(parent_directory) - 1] == "/"):
 				os.mkdir(parent_directory + "/" + name)
@@ -174,11 +173,11 @@ class signal_handlers(dbus.service.Object):
 class Trash(dbus.service.Object):
 
 	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
-	def DisplayTrash(self, display=None, startup_id=None):
+	def DisplayTrash(self, display, startup_id):
 		Popen(["xdg-open","trash://"])
 
 	@dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
-	def MoveToTrash(self, filenames, display=None, startup_id=None):
+	def MoveToTrash(self, filenames, display, startup_id):
 		args = ["gio", "trash"]
 		for uri in filenames:
 			path = str(uri)
@@ -194,7 +193,7 @@ class Trash(dbus.service.Object):
 			args = ["gio", "trash"]
 
 	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
-	def EmptyTrash(self, display=None, startup_id=None):
+	def EmptyTrash(self, display, startup_id):
 		Popen(["gio", "trash", "--empty"])
 
 class GUI(Gtk.Window):
