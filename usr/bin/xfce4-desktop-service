@@ -29,7 +29,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, GObject, Gtk, Gdk
 from sys import argv, stderr
-from shutil import copyfile, rmtree
+from shutil import copyfile, rmtree, SameFileError
 import threading
 import os
 
@@ -95,8 +95,11 @@ class signal_handlers(dbus.service.Object):
 				target_files[each] = "".join(target_files[each])
 			if ("%20" in target_files[each]):
 				target_files[each] = target_files[each].split("%20")
-				target_files[each] = " ".join(source_files[each])
-			copyfile(source_files[each], target_files[each])
+				target_files[each] = " ".join(target_files[each])
+			try:
+				copyfile(source_files[each], target_files[each])
+			except SameFileError:
+				pass
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
 	def CreateFile(self, parent_directory, content_type, display, startup_id):
