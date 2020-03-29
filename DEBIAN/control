@@ -1,10 +1,10 @@
 Package: xfce4-desktop-service
-Version: 0.0.6-alpha0
+Version: 0.0.7-alpha0
 Maintainer: Thomas Castleman <contact@draugeros.org>
 Section: xfce
 Architecture: all
 Priority: optional
-Depends: python3, python3-dbus, xdg-utils, libglib2.0-bin, xfdesktop4
+Depends: python3, python3-dbus, xdg-utils, libglib2.0-bin, xfdesktop4, gir1.2-gtk-3.0 (>=3.24.12-1ubuntu1)
 Breaks: thunar
 Description: Use whatever file manager you want with Xfce
  This package provides a file manager service for Xfce, in a way that does not require Thunar to be installed.
