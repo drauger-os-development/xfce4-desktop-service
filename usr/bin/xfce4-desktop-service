@@ -171,6 +171,13 @@ class signal_handlers(dbus.service.Object):
 		new_path = new_path + "/" + name
 		os.rename(path, new_path)
 
+	@dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
+	def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
+		template_path = template_path.split("/")
+		parent_directory = parent_directory + "/" + template_path[len(template_path) - 1]
+		template_path = "/".join(template_path)
+		self.CopyTo(None, [template_path], [parent_directory], None, None)
+		self.RenameFile(parent_directory, None, None)
 
 class Trash(dbus.service.Object):
 
