@@ -33,28 +33,24 @@ from shutil import copyfile, rmtree, SameFileError
 import threading
 import os
 
-class FmObject(dbus.service.Object):
-
-    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
-    def ShowFolders(self, uris, startupId):
-        xdg_open(uris[0])
-
-    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
-    def ShowItems(self, uris, startupId):
-        xdg_open(uris[0])
-
-    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
-    def ShowItemProperties(self, uris, startupId):
-        xdg_open(uris[0])
-
-    @dbus.service.method("org.xfce.FileManager1", in_signature='', out_signature='')
-    def Exit(self):
-        mainloop.quit()
-
-
-
 
 class signal_handlers(dbus.service.Object):
+
+	@dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+	def ShowFolders(self, uris, startupId):
+		xdg_open(uris[0])
+
+	@dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+	def ShowItems(self, uris, startupId):
+		xdg_open(uris[0])
+
+	@dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+	def ShowItemProperties(self, uris, startupId):
+		xdg_open(uris[0])
+
+	@dbus.service.method("org.xfce.FileManager1", in_signature='', out_signature='')
+	def Exit(self):
+		mainloop.quit()
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
 	def Launch(self, uri, display, startup_id):
@@ -179,8 +175,6 @@ class signal_handlers(dbus.service.Object):
 		self.CopyTo(None, [template_path], [parent_directory], None, None)
 		self.RenameFile(parent_directory, None, None)
 
-class Trash(dbus.service.Object):
-
 	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
 	def DisplayTrash(self, display, startup_id):
 		Popen(["xdg-open","trash://"])
@@ -192,6 +186,9 @@ class Trash(dbus.service.Object):
 			path = str(uri)
 			if path.startswith('file://'):
 				path = path[7:]
+			if ("%20" in path):
+				path = path.split("%20")
+				path = " ".join(path)
 			args.append(path)
 			if os.fork() == 0:
 				Popen(args)
@@ -204,6 +201,10 @@ class Trash(dbus.service.Object):
 	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
 	def EmptyTrash(self, display, startup_id):
 		Popen(["gio", "trash", "--empty"])
+
+	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+	def DisplayFileProperties(self, uri, display, startup_id):
+		return None
 
 class GUI(Gtk.Window):
 	def __init__(self, content_type, name):
@@ -271,33 +272,12 @@ def xdg_open(uri):
 	else:
 		os.wait()
 
-
-def File_Manager1():
-	DBusGMainLoop(set_as_default=True)
-
-	session_bus = dbus.SessionBus()
-	name = dbus.service.BusName("org.xfce.FileManager1", session_bus)
-	object = FmObject(session_bus, '/org/xfce/FileManager1')
-
-	mainloop = GLib.MainLoop()
-	mainloop.run()
-
 def File_Manager():
 	DBusGMainLoop(set_as_default=True)
 
 	bus = dbus.SessionBus()
 	name = dbus.service.BusName("org.xfce.FileManager", bus)
 	object = signal_handlers(bus, '/org/xfce/FileManager')
-
-	mainloop = GLib.MainLoop()
-	mainloop.run()
-
-def Trash_Manager():
-	DBusGMainLoop(set_as_default=True)
-
-	bus = dbus.SessionBus()
-	name = dbus.service.BusName("org.xfce.Trash", bus)
-	object = Trash(bus, '/org/xfce/Trash')
 
 	mainloop = GLib.MainLoop()
 	mainloop.run()
@@ -317,26 +297,14 @@ def show_GUI(content_type, file_name):
 def eprint(*args, **kwargs):
 	print(*args, file=stderr, **kwargs)
 
-def launch_all():
-	FM = threading.Thread(target=File_Manager)
-	FM1 = threading.Thread(target=File_Manager1)
-	T = threading.Thread(target=Trash_Manager)
-
-	FM.start()
-	FM1.start()
-	T.start()
-
-	FM.join()
-	FM1.join()
-	T.join()
 
 if __name__ == '__main__':
 	#get length of argv
 	argc = len(argv)
-	VERSION = "0.0.6-alpha0"
+	VERSION = "0.0.8-alpha0"
 	HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
 	if (argc <= 1):
-		launch_all()
+		File_Manager()
 	elif ((argv[1] == "-h") or (argv[1] == "--help")):
 		print(HELP)
 	elif ((argv[1] == "-v") or (argv[1] == "--version")):
