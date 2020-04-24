@@ -30,8 +30,9 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, GObject, Gtk, Gdk
 from sys import argv, stderr
 from shutil import copyfile, rmtree, SameFileError
-import threading
+from pwd import getpwuid
 import os
+import magic
 
 
 class signal_handlers(dbus.service.Object):
@@ -106,7 +107,7 @@ class signal_handlers(dbus.service.Object):
 				del(parent_directory[0])
 				x = x + 1
 			parent_directory = "".join(parent_directory)
-		name = show_GUI(content_type, None)
+		name = show_naming_GUI(content_type, None)
 		if (name[len(name) - 1] == 1):
 			return None
 		else:
@@ -204,9 +205,15 @@ class signal_handlers(dbus.service.Object):
 
 	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
 	def DisplayFileProperties(self, uri, display, startup_id):
-		return None
+		path = str(uri)
+		if path.startswith('file://'):
+			path = path[7:]
+		if ("%20" in path):
+			path = path.split("%20")
+			path = " ".join(path)
+		show_properties_GUI(path)
 
-class GUI(Gtk.Window):
+class naming_GUI(Gtk.Window):
 	def __init__(self, content_type, name):
 		if (content_type == "inode/directory"):
 			content_type = "directory"
@@ -257,6 +264,220 @@ class GUI(Gtk.Window):
 		Gtk.main_quit("delete-event")
 		return self.set_name
 
+class properties_GUI(Gtk.Window):
+	def __init__(self, file_path):
+		self.file_path = file_path
+		self.file_name = self.file_path.split("/")[len(self.file_path.split("/")) - 1]
+		mime = magic.Magic(mime=True)
+
+		try:
+			self.file_mime = mime.from_file(self.file_path)
+			self.file_size = os.path.getsize(self.file_path)
+		except IsADirectoryError:
+			self.file_mime = "inode/directory"
+			self.file_size = None
+
+		self.file_permissions = str(oct(os.stat(self.file_path).st_mode)[-3:])
+		self.file_owner = getpwuid(os.stat(self.file_path).st_uid).pw_name
+		self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
+
+		# print("PATH: " + self.file_path)
+		# print("NAME: " + self.file_name)
+		# print("TYPE: " + self.file_mime)
+		# if (self.file_mime != "inode/directory"):
+			# print("SIZE: %s" % (self.file_size))
+		# print("PERM: " + self.file_permissions)
+		# print("OWNER: " + self.file_owner)
+		# print("GROUP: " + self.file_group)
+
+		Gtk.Window.__init__(self, title="Desktop Service")
+		self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+		self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+		self.page1 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+		self.add(self.grid)
+		self.set_icon_from_file("/usr/share/icons/Drauger/scalable/menus/drauger_os-logo.svg")
+
+		self.main()
+
+	def main(self):
+		self.stack = Gtk.Stack()
+		self.stack.add_titled(self.page0, "page0", "Basic")
+		self.stack.add_titled(self.page1, "page1", "Permissions")
+		self.grid.attach(self.stack, 1, 2, 4, 1)
+
+		self.stack_switcher = Gtk.StackSwitcher()
+		self.stack_switcher.set_stack(self.stack)
+		self.grid.attach(self.stack_switcher, 2, 1, 2, 1)
+
+		self.label = Gtk.Label()
+		self.label.set_markup("""
+	Name:\t""")
+		self.label.set_justify(Gtk.Justification.LEFT)
+		self.page0.attach(self.label, 1, 1, 1, 1)
+
+		self.label1 = Gtk.Label()
+		self.label1.set_markup("\n\t" + self.file_name + "\t")
+		self.label1.set_justify(Gtk.Justification.LEFT)
+		self.page0.attach(self.label1, 2, 1, 1, 1)
+
+		self.label2 = Gtk.Label()
+		self.label2.set_markup("""
+	Type:\t""")
+		self.label2.set_justify(Gtk.Justification.LEFT)
+		self.page0.attach(self.label2, 1, 2, 1, 1)
+
+		self.label3 = Gtk.Label()
+		self.label3.set_markup("\n\t" + self.file_mime + "\t")
+		self.label3.set_justify(Gtk.Justification.LEFT)
+		self.page0.attach(self.label3, 2, 2, 1, 1)
+
+		self.label4 = Gtk.Label()
+		self.label4.set_markup("""
+	Location:\t""")
+		self.label4.set_justify(Gtk.Justification.LEFT)
+		self.page0.attach(self.label4, 1, 3, 1, 1)
+
+		self.label5 = Gtk.Label()
+		self.label5.set_markup("\n\t" + self.file_path + "\t")
+		self.label5.set_justify(Gtk.Justification.LEFT)
+		self.page0.attach(self.label5, 2, 3, 1, 1)
+
+		self.label6 = Gtk.Label()
+		self.label6.set_markup("""
+	Owner:\t""")
+		self.label6.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label6, 1, 1, 1, 1)
+
+		self.label7 = Gtk.Label()
+		self.label7.set_markup("\n\t" + self.file_owner + "\t")
+		self.label7.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label7, 2, 1, 1, 1)
+
+		if (self.file_permissions[0] == "0"):
+			owner_perms = "No Permissions"
+		elif (self.file_permissions[0] == "1"):
+			owner_perms = "Execute"
+		elif (self.file_permissions[0] == "2"):
+			owner_perms = "Write"
+		elif (self.file_permissions[0] == "4"):
+			owner_perms = "Read"
+		elif (self.file_permissions[0] == "3"):
+			owner_perms = "Execute, Write"
+		elif (self.file_permissions[0] == "5"):
+			owner_perms = "Execute, Read"
+		elif (self.file_permissions[0] == "6"):
+			owner_perms = "Read, Write"
+		elif (self.file_permissions[0] == "7"):
+			owner_perms = "Execute, Read, Write"
+		else:
+			owner_perms = "Unknown"
+
+		self.label8 = Gtk.Label()
+		self.label8.set_markup("""
+	Owner
+	Permissions:\t""")
+		self.label8.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label8, 1, 2, 1, 1)
+
+		self.label9 = Gtk.Label()
+		self.label9.set_markup("\n\t" + owner_perms + "\t")
+		self.label9.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label9, 2, 2, 1, 1)
+
+		self.label10 = Gtk.Label()
+		self.label10.set_markup("""
+	Group:\t""")
+		self.label10.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label10, 1, 3, 1, 1)
+
+		self.label11 = Gtk.Label()
+		self.label11.set_markup("\n\t" + self.file_group + "\t")
+		self.label11.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label11, 2, 3, 1, 1)
+
+		if (self.file_permissions[1] == "0"):
+			group_perms = "No Permissions"
+		elif (self.file_permissions[1] == "1"):
+			group_perms = "Execute"
+		elif (self.file_permissions[1] == "2"):
+			group_perms = "Write"
+		elif (self.file_permissions[1] == "4"):
+			group_perms = "Read"
+		elif (self.file_permissions[1] == "3"):
+			group_perms = "Execute, Write"
+		elif (self.file_permissions[1] == "5"):
+			group_perms = "Execute, Read"
+		elif (self.file_permissions[1] == "6"):
+			group_perms = "Read, Write"
+		elif (self.file_permissions[1] == "7"):
+			group_perms = "Execute, Read, Write"
+		else:
+			group_perms = "Unknown"
+
+		self.label12 = Gtk.Label()
+		self.label12.set_markup("""
+	Group
+	Permissions:\t""")
+		self.label12.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label12, 1, 4, 1, 1)
+
+		self.label13 = Gtk.Label()
+		self.label13.set_markup("\n\t" + owner_perms + "\t")
+		self.label13.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label13, 2, 4, 1, 1)
+
+		if (self.file_permissions[2] == "0"):
+			public_perms = "No Permissions"
+		elif (self.file_permissions[2] == "1"):
+			public_perms = "Execute"
+		elif (self.file_permissions[2] == "2"):
+			public_perms = "Write"
+		elif (self.file_permissions[2] == "4"):
+			public_perms = "Read"
+		elif (self.file_permissions[2] == "3"):
+			public_perms = "Execute, Write"
+		elif (self.file_permissions[2] == "5"):
+			public_perms = "Execute, Read"
+		elif (self.file_permissions[2] == "6"):
+			public_perms = "Read, Write"
+		elif (self.file_permissions[2] == "7"):
+			public_perms = "Execute, Read, Write"
+		else:
+			public_perms = "Unknown"
+
+		self.label14 = Gtk.Label()
+		self.label14.set_markup("""
+	Public
+	Permissions:\t""")
+		self.label12.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label14, 1, 5, 1, 1)
+
+		self.label15 = Gtk.Label()
+		self.label15.set_markup("\n\t" + public_perms + "\t")
+		self.label15.set_justify(Gtk.Justification.LEFT)
+		self.page1.attach(self.label15, 2, 5, 1, 1)
+
+		self.button1 = Gtk.Button.new_with_label("Delete")
+		self.button1.connect("clicked", self.delete)
+		self.grid.attach(self.button1, 4, 3, 1, 1)
+
+		self.button2 = Gtk.Button.new_with_label("Exit")
+		self.button2.connect("clicked", self.exit)
+		self.grid.attach(self.button2, 1, 3, 1, 1)
+
+	def delete(self, button):
+		try:
+			os.remove(self.file_path)
+		except IsADirectoryError:
+			rmtree(self.file_path)
+
+		self.exit("clicked")
+
+	def exit(self, button):
+		self.set_name = [1]
+		self.destroy()
+		Gtk.main_quit("delete-event")
+
 def xdg_open(uri):
 	args = ['xdg-open']
 	path = str(uri)
@@ -282,15 +503,24 @@ def File_Manager():
 	mainloop = GLib.MainLoop()
 	mainloop.run()
 
-def show_GUI(content_type, file_name):
-	window = GUI(content_type, file_name)
+def show_naming_GUI(content_type, file_name):
+	window = naming_GUI(content_type, file_name)
 	window.set_decorated(True)
 	window.set_resizable(False)
 	window.set_position(Gtk.WindowPosition.CENTER)
-	window.connect("delete-event", GUI.exit)
+	window.connect("delete-event", naming_GUI.exit)
 	window.show_all()
 	Gtk.main()
 	return window.set_name
+
+def show_properties_GUI(file_path):
+	window = properties_GUI(file_path)
+	window.set_decorated(True)
+	window.set_resizable(False)
+	window.set_position(Gtk.WindowPosition.CENTER)
+	window.connect("delete-event", properties_GUI.exit)
+	window.show_all()
+	Gtk.main()
 
 
 # Make it easier for us to print to stderr
@@ -301,7 +531,7 @@ def eprint(*args, **kwargs):
 if __name__ == '__main__':
 	#get length of argv
 	argc = len(argv)
-	VERSION = "0.0.8-alpha0"
+	VERSION = "0.0.9-alpha0"
 	HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
 	if (argc <= 1):
 		File_Manager()
