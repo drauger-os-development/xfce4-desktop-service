@@ -230,7 +230,7 @@ class naming_GUI(Gtk.Window):
 		Gtk.Window.__init__(self, title="Desktop Service")
 		self.grid=Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
 		self.add(self.grid)
-		self.set_icon_from_file("/usr/share/icons/Drauger/scalable/menus/drauger_os-logo.svg")
+		self.set_icon_name("desktop-environment-xfce")
 
 		self.label = Gtk.Label()
 		self.label.set_markup("""
@@ -295,7 +295,7 @@ class properties_GUI(Gtk.Window):
 		self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
 		self.page1 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
 		self.add(self.grid)
-		self.set_icon_from_file("/usr/share/icons/Drauger/scalable/menus/drauger_os-logo.svg")
+		self.set_icon_name("desktop-environment-xfce")
 
 		self.main()
 
