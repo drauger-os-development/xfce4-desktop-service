@@ -37,511 +37,520 @@ import magic
 
 class signal_handlers(dbus.service.Object):
 
-	@dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
-	def ShowFolders(self, uris, startupId):
-		xdg_open(uris[0])
+    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+    def ShowFolders(self, uris, startupId):
+        xdg_open(uris[0])
 
-	@dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
-	def ShowItems(self, uris, startupId):
-		xdg_open(uris[0])
+    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+    def ShowItems(self, uris, startupId):
+        xdg_open(uris[0])
 
-	@dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
-	def ShowItemProperties(self, uris, startupId):
-		xdg_open(uris[0])
+    @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
+    def ShowItemProperties(self, uris, startupId):
+        xdg_open(uris[0])
 
-	@dbus.service.method("org.xfce.FileManager1", in_signature='', out_signature='')
-	def Exit(self):
-		mainloop.quit()
+    @dbus.service.method("org.xfce.FileManager1", in_signature='', out_signature='')
+    def Exit(self):
+        mainloop.quit()
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
-	def Launch(self, uri, display, startup_id):
-		xdg_open(uri)
+    @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+    def Launch(self, uri, display, startup_id):
+        xdg_open(uri)
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='ssasss', out_signature='')
-	def Execute(self, working_directory, uri, filenames, display, startup_id):
-		xdg_open(uri)
+    @dbus.service.method("org.xfce.FileManager", in_signature='ssasss', out_signature='')
+    def Execute(self, working_directory, uri, filenames, display, startup_id):
+        xdg_open(uri)
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
-	def LaunchFiles(self, working_directory, filenames, display, startup_id):
-		for each in filenames:
-			xdg_open(each)
+    @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
+    def LaunchFiles(self, working_directory, filenames, display, startup_id):
+        for each in filenames:
+            xdg_open(each)
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
-	def DisplayFolder(self, uri, display, startup_id):
-		xdg_open(uri)
+    @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+    def DisplayFolder(self, uri, display, startup_id):
+        xdg_open(uri)
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sasasss', out_signature='')
-	def CopyTo(self, working_directory, source_files, target_files, display, startup_id):
-		for each in range(len(source_files)):
-			if (source_files[each][0:7] == "file://"):
-				source_files[each] = list(str(source_files[each]))
-				x = 0
-				while x < 7:
-					del(source_files[each][0])
-					x = x + 1
-				source_files[each] = "".join(source_files[each])
-			if ("%20" in source_files[each]):
-				source_files[each] = source_files[each].split("%20")
-				source_files[each] = " ".join(source_files[each])
-			if (target_files[each][0:7] == "file://"):
-				target_files[each] = list(str(target_files[each]))
-				x = 0
-				while x < 7:
-					del(target_files[each][0])
-					x = x + 1
-				target_files[each] = "".join(target_files[each])
-			if ("%20" in target_files[each]):
-				target_files[each] = target_files[each].split("%20")
-				target_files[each] = " ".join(target_files[each])
-			try:
-				copyfile(source_files[each], target_files[each])
-			except SameFileError:
-				pass
+    @dbus.service.method("org.xfce.FileManager", in_signature='sasasss', out_signature='')
+    def CopyTo(self, working_directory, source_files, target_files, display, startup_id):
+        for each in range(len(source_files)):
+            if (source_files[each][0:7] == "file://"):
+                source_files[each] = list(str(source_files[each]))
+                x = 0
+                while x < 7:
+                    del(source_files[each][0])
+                    x = x + 1
+                source_files[each] = "".join(source_files[each])
+            if ("%20" in source_files[each]):
+                source_files[each] = source_files[each].split("%20")
+                source_files[each] = " ".join(source_files[each])
+            if (target_files[each][0:7] == "file://"):
+                target_files[each] = list(str(target_files[each]))
+                x = 0
+                while x < 7:
+                    del(target_files[each][0])
+                    x = x + 1
+                target_files[each] = "".join(target_files[each])
+            if ("%20" in target_files[each]):
+                target_files[each] = target_files[each].split("%20")
+                target_files[each] = " ".join(target_files[each])
+            try:
+                copyfile(source_files[each], target_files[each])
+            except SameFileError:
+                pass
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
-	def CreateFile(self, parent_directory, content_type, display, startup_id):
-		if (parent_directory[0:7] == "file://"):
-			parent_directory = list(str(parent_directory))
-			x = 0
-			while x < 7:
-				del(parent_directory[0])
-				x = x + 1
-			parent_directory = "".join(parent_directory)
-		name = show_naming_GUI(content_type, None)
-		if (name[len(name) - 1] == 1):
-			return None
-		else:
-			name = name[0]
-		if (content_type == "inode/directory"):
-			if (parent_directory[len(parent_directory) - 1] == "/"):
-				os.mkdir(parent_directory + "/" + name)
-			else:
-				os.mkdir(parent_directory + "/" + name)
-		else:
-			if (parent_directory[len(parent_directory) - 1] == "/"):
-				with open(parent_directory + "/" + name, "w+") as new_file:
-					new_file.write("")
-			else:
-				with open(parent_directory + "/" + name, "w+") as new_file:
-					new_file.write("")
+    @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
+    def CreateFile(self, parent_directory, content_type, display, startup_id):
+        if (parent_directory[0:7] == "file://"):
+            parent_directory = list(str(parent_directory))
+            x = 0
+            while x < 7:
+                del(parent_directory[0])
+                x = x + 1
+            parent_directory = "".join(parent_directory)
+        name = show_naming_GUI(content_type, None)
+        if (name[len(name) - 1] == 1):
+            return None
+        else:
+            name = name[0]
+        if (content_type == "inode/directory"):
+            if (parent_directory[len(parent_directory) - 1] == "/"):
+                os.mkdir(parent_directory + "/" + name)
+            else:
+                os.mkdir(parent_directory + "/" + name)
+        else:
+            if (parent_directory[len(parent_directory) - 1] == "/"):
+                with open(parent_directory + "/" + name, "w+") as new_file:
+                    new_file.write("")
+            else:
+                with open(parent_directory + "/" + name, "w+") as new_file:
+                    new_file.write("")
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
-	def UnlinkFiles(self, working_directory, filenames, display, startup_id):
-		for each in filenames:
-			if (each[0:7] == "file://"):
-				each = list(str(each))
-				x = 0
-				while x < 7:
-					del(each[0])
-					x = x + 1
-				each = "".join(each)
-			if ("%20" in each):
-				each = each.split("%20")
-				each = " ".join(each)
-			try:
-				os.remove(each)
-			except IsADirectoryError:
-				rmtree(each)
+    @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
+    def UnlinkFiles(self, working_directory, filenames, display, startup_id):
+        for each in filenames:
+            if (each[0:7] == "file://"):
+                each = list(str(each))
+                x = 0
+                while x < 7:
+                    del(each[0])
+                    x = x + 1
+                each = "".join(each)
+            if ("%20" in each):
+                each = each.split("%20")
+                each = " ".join(each)
+            try:
+                os.remove(each)
+            except IsADirectoryError:
+                rmtree(each)
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
-	def RenameFile(self, filename, display, startup_id):
-		filename = str(filename)
-		if filename.startswith('file://'):
-			path = filename[7:]
-		else:
-			path = filename
-		if ("%20" in path):
-			path = path.split("%20")
-			path = " ".join(path)
-		if (os.path.isdir(path)):
-			content_type = "inode/directory"
-		else:
-			content_type = "file"
-		name = show_GUI(content_type, (path.split("/"))[len(path.split("/")) - 1])
-		if (name[len(name) - 1] == 1):
-			return None
-		else:
-			name = name[0]
-		new_path = path.split("/")
-		del(new_path[len(new_path) - 1])
-		new_path = "/".join(new_path)
-		new_path = new_path + "/" + name
-		os.rename(path, new_path)
+    @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+    def RenameFile(self, filename, display, startup_id):
+        filename = str(filename)
+        if filename.startswith('file://'):
+            path = filename[7:]
+        else:
+            path = filename
+        if ("%20" in path):
+            path = path.split("%20")
+            path = " ".join(path)
+        if (os.path.isdir(path)):
+            content_type = "inode/directory"
+        else:
+            content_type = "file"
+        name = show_naming_GUI(content_type, (path.split("/"))[len(path.split("/")) - 1])
+        if (name[len(name) - 1] == 1):
+            return None
+        else:
+            name = name[0]
+        new_path = path.split("/")
+        del(new_path[len(new_path) - 1])
+        new_path = "/".join(new_path)
+        new_path = new_path + "/" + name
+        os.rename(path, new_path)
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
-	def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
-		template_path = template_path.split("/")
-		parent_directory = parent_directory + "/" + template_path[len(template_path) - 1]
-		template_path = "/".join(template_path)
-		self.CopyTo(None, [template_path], [parent_directory], None, None)
-		self.RenameFile(parent_directory, None, None)
+    @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
+    def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
+        template_path = template_path.split("/")
+        parent_directory = parent_directory + "/" + template_path[len(template_path) - 1]
+        template_path = "/".join(template_path)
+        self.CopyTo(None, [template_path], [parent_directory], None, None)
+        self.RenameFile(parent_directory, None, None)
 
-	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
-	def DisplayTrash(self, display, startup_id):
-		Popen(["xdg-open","trash://"])
+    @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
+    def DisplayTrash(self, display, startup_id):
+        Popen(["xdg-open","trash://"])
 
-	@dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
-	def MoveToTrash(self, filenames, display, startup_id):
-		args = ["gio", "trash"]
-		for uri in filenames:
-			path = str(uri)
-			if path.startswith('file://'):
-				path = path[7:]
-			if ("%20" in path):
-				path = path.split("%20")
-				path = " ".join(path)
-			args.append(path)
-			if os.fork() == 0:
-				Popen(args)
-				args = ["gio", "trash"]
-				os._exit(0)
-			else:
-				os.wait()
-			args = ["gio", "trash"]
+    @dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
+    def MoveToTrash(self, filenames, display, startup_id):
+        args = ["gio", "trash"]
+        for uri in filenames:
+            path = str(uri)
+            if path.startswith('file://'):
+                path = path[7:]
+            if ("%20" in path):
+                path = path.split("%20")
+                path = " ".join(path)
+            args.append(path)
+            if os.fork() == 0:
+                Popen(args)
+                args = ["gio", "trash"]
+                os._exit(0)
+            else:
+                os.wait()
+            args = ["gio", "trash"]
 
-	@dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
-	def EmptyTrash(self, display, startup_id):
-		Popen(["gio", "trash", "--empty"])
+    @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
+    def EmptyTrash(self, display, startup_id):
+        Popen(["gio", "trash", "--empty"])
 
-	@dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
-	def DisplayFileProperties(self, uri, display, startup_id):
-		path = str(uri)
-		if path.startswith('file://'):
-			path = path[7:]
-		if ("%20" in path):
-			path = path.split("%20")
-			path = " ".join(path)
-		show_properties_GUI(path)
+    @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
+    def DisplayFileProperties(self, uri, display, startup_id):
+        path = str(uri)
+        if path.startswith('file://'):
+            path = path[7:]
+        if ("%20" in path):
+            path = path.split("%20")
+            path = " ".join(path)
+        show_properties_GUI(path)
 
 class naming_GUI(Gtk.Window):
-	def __init__(self, content_type, name):
-		if (content_type == "inode/directory"):
-			content_type = "directory"
-		else:
-			content_type = "file"
+    def __init__(self, content_type, name):
+        if (content_type == "inode/directory"):
+            content_type = "directory"
+        else:
+            content_type = "file"
 
-		if (name == None):
-			if (content_type == "file"):
-				name = "Untitled File"
-			elif (content_type == "directory"):
-				name = "Untitled Folder"
+        if (name == None):
+            if (content_type == "file"):
+                name = "Untitled File"
+            elif (content_type == "directory"):
+                name = "Untitled Folder"
 
-		# Initialize the Window
-		Gtk.Window.__init__(self, title="Desktop Service")
-		self.grid=Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
-		self.add(self.grid)
-		self.set_icon_name("desktop-environment-xfce")
+        # Initialize the Window
+        Gtk.Window.__init__(self, title="Desktop Service")
+        self.grid=Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+        self.add(self.grid)
+        self.set_icon_name("desktop-environment-xfce")
 
-		self.label = Gtk.Label()
-		self.label.set_markup("""
-	What would you like to name this %s?\t""" % (content_type))
-		self.label.set_justify(Gtk.Justification.LEFT)
-		self.grid.attach(self.label, 1, 1, 3, 1)
+        self.label = Gtk.Label()
+        self.label.set_markup("""
+    What would you like to name this %s?\t""" % (content_type))
+        self.label.set_justify(Gtk.Justification.LEFT)
+        self.grid.attach(self.label, 1, 1, 3, 1)
 
-		self.name = Gtk.Entry()
-		self.name.set_text(name)
-		self.grid.attach(self.name, 1, 2, 3, 1)
+        self.name = Gtk.Entry()
+        self.name.set_text(name)
+        self.name.set_can_default(False)
+        self.name.set_can_focus(True)
+        self.grid.attach(self.name, 1, 2, 3, 1)
+        self.name.grab_focus()
 
-		self.button1 = Gtk.Button.new_with_label("Okay -->")
-		self.button1.connect("clicked", self.done)
-		self.grid.attach(self.button1, 3, 3, 1, 1)
 
-		self.button2 = Gtk.Button.new_with_label("Exit")
-		self.button2.connect("clicked", self.exit)
-		self.grid.attach(self.button2, 1, 3, 1, 1)
+        self.button1 = Gtk.Button.new_with_label("Okay -->")
+        self.button1.connect("clicked", self.done)
+        self.button1.set_can_default(True)
+        self.grid.attach(self.button1, 3, 3, 1, 1)
 
-		self.set_default(self.button1)
+        self.button2 = Gtk.Button.new_with_label("Exit")
+        self.button2.connect("clicked", self.exit)
+        self.button2.set_can_default(False)
+        self.grid.attach(self.button2, 1, 3, 1, 1)
 
-	def done(self, button):
-		self.set_name = [self.name.get_text(),0]
-		self.destroy()
-		Gtk.main_quit("delete-event")
-		return self.set_name
+        self.button1.grab_default()
 
-	def exit(self, button):
-		self.set_name = [1]
-		self.destroy()
-		Gtk.main_quit("delete-event")
-		return self.set_name
+        print(self.button1.has_default())
+
+
+    def done(self, button):
+        self.set_name = [self.name.get_text(),0]
+        self.destroy()
+        Gtk.main_quit("delete-event")
+        return self.set_name
+
+    def exit(self, button):
+        self.set_name = [1]
+        self.destroy()
+        Gtk.main_quit("delete-event")
+        return self.set_name
 
 class properties_GUI(Gtk.Window):
-	def __init__(self, file_path):
-		self.file_path = file_path
-		self.file_name = self.file_path.split("/")[len(self.file_path.split("/")) - 1]
-		mime = magic.Magic(mime=True)
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.file_name = self.file_path.split("/")[len(self.file_path.split("/")) - 1]
+        mime = magic.Magic(mime=True)
 
-		try:
-			self.file_mime = mime.from_file(self.file_path)
-			self.file_size = os.path.getsize(self.file_path)
-		except IsADirectoryError:
-			self.file_mime = "inode/directory"
-			self.file_size = None
+        try:
+            self.file_mime = mime.from_file(self.file_path)
+            self.file_size = os.path.getsize(self.file_path)
+        except IsADirectoryError:
+            self.file_mime = "inode/directory"
+            self.file_size = None
 
-		self.file_permissions = str(oct(os.stat(self.file_path).st_mode)[-3:])
-		self.file_owner = getpwuid(os.stat(self.file_path).st_uid).pw_name
-		self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
+        self.file_permissions = str(oct(os.stat(self.file_path).st_mode)[-3:])
+        self.file_owner = getpwuid(os.stat(self.file_path).st_uid).pw_name
+        self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
 
-		# print("PATH: " + self.file_path)
-		# print("NAME: " + self.file_name)
-		# print("TYPE: " + self.file_mime)
-		# if (self.file_mime != "inode/directory"):
-			# print("SIZE: %s" % (self.file_size))
-		# print("PERM: " + self.file_permissions)
-		# print("OWNER: " + self.file_owner)
-		# print("GROUP: " + self.file_group)
+        # print("PATH: " + self.file_path)
+        # print("NAME: " + self.file_name)
+        # print("TYPE: " + self.file_mime)
+        # if (self.file_mime != "inode/directory"):
+            # print("SIZE: %s" % (self.file_size))
+        # print("PERM: " + self.file_permissions)
+        # print("OWNER: " + self.file_owner)
+        # print("GROUP: " + self.file_group)
 
-		Gtk.Window.__init__(self, title="Desktop Service")
-		self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
-		self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
-		self.page1 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
-		self.add(self.grid)
-		self.set_icon_name("desktop-environment-xfce")
+        Gtk.Window.__init__(self, title="Desktop Service")
+        self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+        self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+        self.page1 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+        self.add(self.grid)
+        self.set_icon_name("desktop-environment-xfce")
 
-		self.main()
+        self.main()
 
-	def main(self):
-		self.stack = Gtk.Stack()
-		self.stack.add_titled(self.page0, "page0", "Basic")
-		self.stack.add_titled(self.page1, "page1", "Permissions")
-		self.grid.attach(self.stack, 1, 2, 4, 1)
+    def main(self):
+        self.stack = Gtk.Stack()
+        self.stack.add_titled(self.page0, "page0", "Basic")
+        self.stack.add_titled(self.page1, "page1", "Permissions")
+        self.grid.attach(self.stack, 1, 2, 4, 1)
 
-		self.stack_switcher = Gtk.StackSwitcher()
-		self.stack_switcher.set_stack(self.stack)
-		self.grid.attach(self.stack_switcher, 2, 1, 2, 1)
+        self.stack_switcher = Gtk.StackSwitcher()
+        self.stack_switcher.set_stack(self.stack)
+        self.grid.attach(self.stack_switcher, 2, 1, 2, 1)
 
-		self.label = Gtk.Label()
-		self.label.set_markup("""
-	Name:\t""")
-		self.label.set_justify(Gtk.Justification.LEFT)
-		self.page0.attach(self.label, 1, 1, 1, 1)
+        self.label = Gtk.Label()
+        self.label.set_markup("""
+    Name:\t""")
+        self.label.set_justify(Gtk.Justification.LEFT)
+        self.page0.attach(self.label, 1, 1, 1, 1)
 
-		self.label1 = Gtk.Label()
-		self.label1.set_markup("\n\t" + self.file_name + "\t")
-		self.label1.set_justify(Gtk.Justification.LEFT)
-		self.page0.attach(self.label1, 2, 1, 1, 1)
+        self.label1 = Gtk.Label()
+        self.label1.set_markup("\n\t" + self.file_name + "\t")
+        self.label1.set_justify(Gtk.Justification.LEFT)
+        self.page0.attach(self.label1, 2, 1, 1, 1)
 
-		self.label2 = Gtk.Label()
-		self.label2.set_markup("""
-	Type:\t""")
-		self.label2.set_justify(Gtk.Justification.LEFT)
-		self.page0.attach(self.label2, 1, 2, 1, 1)
+        self.label2 = Gtk.Label()
+        self.label2.set_markup("""
+    Type:\t""")
+        self.label2.set_justify(Gtk.Justification.LEFT)
+        self.page0.attach(self.label2, 1, 2, 1, 1)
 
-		self.label3 = Gtk.Label()
-		self.label3.set_markup("\n\t" + self.file_mime + "\t")
-		self.label3.set_justify(Gtk.Justification.LEFT)
-		self.page0.attach(self.label3, 2, 2, 1, 1)
+        self.label3 = Gtk.Label()
+        self.label3.set_markup("\n\t" + self.file_mime + "\t")
+        self.label3.set_justify(Gtk.Justification.LEFT)
+        self.page0.attach(self.label3, 2, 2, 1, 1)
 
-		self.label4 = Gtk.Label()
-		self.label4.set_markup("""
-	Location:\t""")
-		self.label4.set_justify(Gtk.Justification.LEFT)
-		self.page0.attach(self.label4, 1, 3, 1, 1)
+        self.label4 = Gtk.Label()
+        self.label4.set_markup("""
+    Location:\t""")
+        self.label4.set_justify(Gtk.Justification.LEFT)
+        self.page0.attach(self.label4, 1, 3, 1, 1)
 
-		self.label5 = Gtk.Label()
-		self.label5.set_markup("\n\t" + self.file_path + "\t")
-		self.label5.set_justify(Gtk.Justification.LEFT)
-		self.page0.attach(self.label5, 2, 3, 1, 1)
+        self.label5 = Gtk.Label()
+        self.label5.set_markup("\n\t" + self.file_path + "\t")
+        self.label5.set_justify(Gtk.Justification.LEFT)
+        self.page0.attach(self.label5, 2, 3, 1, 1)
 
-		self.label6 = Gtk.Label()
-		self.label6.set_markup("""
-	Owner:\t""")
-		self.label6.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label6, 1, 1, 1, 1)
+        self.label6 = Gtk.Label()
+        self.label6.set_markup("""
+    Owner:\t""")
+        self.label6.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label6, 1, 1, 1, 1)
 
-		self.label7 = Gtk.Label()
-		self.label7.set_markup("\n\t" + self.file_owner + "\t")
-		self.label7.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label7, 2, 1, 1, 1)
+        self.label7 = Gtk.Label()
+        self.label7.set_markup("\n\t" + self.file_owner + "\t")
+        self.label7.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label7, 2, 1, 1, 1)
 
-		if (self.file_permissions[0] == "0"):
-			owner_perms = "No Permissions"
-		elif (self.file_permissions[0] == "1"):
-			owner_perms = "Execute"
-		elif (self.file_permissions[0] == "2"):
-			owner_perms = "Write"
-		elif (self.file_permissions[0] == "4"):
-			owner_perms = "Read"
-		elif (self.file_permissions[0] == "3"):
-			owner_perms = "Execute, Write"
-		elif (self.file_permissions[0] == "5"):
-			owner_perms = "Execute, Read"
-		elif (self.file_permissions[0] == "6"):
-			owner_perms = "Read, Write"
-		elif (self.file_permissions[0] == "7"):
-			owner_perms = "Execute, Read, Write"
-		else:
-			owner_perms = "Unknown"
+        if (self.file_permissions[0] == "0"):
+            owner_perms = "No Permissions"
+        elif (self.file_permissions[0] == "1"):
+            owner_perms = "Execute"
+        elif (self.file_permissions[0] == "2"):
+            owner_perms = "Write"
+        elif (self.file_permissions[0] == "4"):
+            owner_perms = "Read"
+        elif (self.file_permissions[0] == "3"):
+            owner_perms = "Execute, Write"
+        elif (self.file_permissions[0] == "5"):
+            owner_perms = "Execute, Read"
+        elif (self.file_permissions[0] == "6"):
+            owner_perms = "Read, Write"
+        elif (self.file_permissions[0] == "7"):
+            owner_perms = "Execute, Read, Write"
+        else:
+            owner_perms = "Unknown"
 
-		self.label8 = Gtk.Label()
-		self.label8.set_markup("""
-	Owner
-	Permissions:\t""")
-		self.label8.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label8, 1, 2, 1, 1)
+        self.label8 = Gtk.Label()
+        self.label8.set_markup("""
+    Owner
+    Permissions:\t""")
+        self.label8.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label8, 1, 2, 1, 1)
 
-		self.label9 = Gtk.Label()
-		self.label9.set_markup("\n\t" + owner_perms + "\t")
-		self.label9.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label9, 2, 2, 1, 1)
+        self.label9 = Gtk.Label()
+        self.label9.set_markup("\n\t" + owner_perms + "\t")
+        self.label9.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label9, 2, 2, 1, 1)
 
-		self.label10 = Gtk.Label()
-		self.label10.set_markup("""
-	Group:\t""")
-		self.label10.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label10, 1, 3, 1, 1)
+        self.label10 = Gtk.Label()
+        self.label10.set_markup("""
+    Group:\t""")
+        self.label10.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label10, 1, 3, 1, 1)
 
-		self.label11 = Gtk.Label()
-		self.label11.set_markup("\n\t" + self.file_group + "\t")
-		self.label11.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label11, 2, 3, 1, 1)
+        self.label11 = Gtk.Label()
+        self.label11.set_markup("\n\t" + self.file_group + "\t")
+        self.label11.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label11, 2, 3, 1, 1)
 
-		if (self.file_permissions[1] == "0"):
-			group_perms = "No Permissions"
-		elif (self.file_permissions[1] == "1"):
-			group_perms = "Execute"
-		elif (self.file_permissions[1] == "2"):
-			group_perms = "Write"
-		elif (self.file_permissions[1] == "4"):
-			group_perms = "Read"
-		elif (self.file_permissions[1] == "3"):
-			group_perms = "Execute, Write"
-		elif (self.file_permissions[1] == "5"):
-			group_perms = "Execute, Read"
-		elif (self.file_permissions[1] == "6"):
-			group_perms = "Read, Write"
-		elif (self.file_permissions[1] == "7"):
-			group_perms = "Execute, Read, Write"
-		else:
-			group_perms = "Unknown"
+        if (self.file_permissions[1] == "0"):
+            group_perms = "No Permissions"
+        elif (self.file_permissions[1] == "1"):
+            group_perms = "Execute"
+        elif (self.file_permissions[1] == "2"):
+            group_perms = "Write"
+        elif (self.file_permissions[1] == "4"):
+            group_perms = "Read"
+        elif (self.file_permissions[1] == "3"):
+            group_perms = "Execute, Write"
+        elif (self.file_permissions[1] == "5"):
+            group_perms = "Execute, Read"
+        elif (self.file_permissions[1] == "6"):
+            group_perms = "Read, Write"
+        elif (self.file_permissions[1] == "7"):
+            group_perms = "Execute, Read, Write"
+        else:
+            group_perms = "Unknown"
 
-		self.label12 = Gtk.Label()
-		self.label12.set_markup("""
-	Group
-	Permissions:\t""")
-		self.label12.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label12, 1, 4, 1, 1)
+        self.label12 = Gtk.Label()
+        self.label12.set_markup("""
+    Group
+    Permissions:\t""")
+        self.label12.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label12, 1, 4, 1, 1)
 
-		self.label13 = Gtk.Label()
-		self.label13.set_markup("\n\t" + owner_perms + "\t")
-		self.label13.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label13, 2, 4, 1, 1)
+        self.label13 = Gtk.Label()
+        self.label13.set_markup("\n\t" + owner_perms + "\t")
+        self.label13.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label13, 2, 4, 1, 1)
 
-		if (self.file_permissions[2] == "0"):
-			public_perms = "No Permissions"
-		elif (self.file_permissions[2] == "1"):
-			public_perms = "Execute"
-		elif (self.file_permissions[2] == "2"):
-			public_perms = "Write"
-		elif (self.file_permissions[2] == "4"):
-			public_perms = "Read"
-		elif (self.file_permissions[2] == "3"):
-			public_perms = "Execute, Write"
-		elif (self.file_permissions[2] == "5"):
-			public_perms = "Execute, Read"
-		elif (self.file_permissions[2] == "6"):
-			public_perms = "Read, Write"
-		elif (self.file_permissions[2] == "7"):
-			public_perms = "Execute, Read, Write"
-		else:
-			public_perms = "Unknown"
+        if (self.file_permissions[2] == "0"):
+            public_perms = "No Permissions"
+        elif (self.file_permissions[2] == "1"):
+            public_perms = "Execute"
+        elif (self.file_permissions[2] == "2"):
+            public_perms = "Write"
+        elif (self.file_permissions[2] == "4"):
+            public_perms = "Read"
+        elif (self.file_permissions[2] == "3"):
+            public_perms = "Execute, Write"
+        elif (self.file_permissions[2] == "5"):
+            public_perms = "Execute, Read"
+        elif (self.file_permissions[2] == "6"):
+            public_perms = "Read, Write"
+        elif (self.file_permissions[2] == "7"):
+            public_perms = "Execute, Read, Write"
+        else:
+            public_perms = "Unknown"
 
-		self.label14 = Gtk.Label()
-		self.label14.set_markup("""
-	Public
-	Permissions:\t""")
-		self.label12.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label14, 1, 5, 1, 1)
+        self.label14 = Gtk.Label()
+        self.label14.set_markup("""
+    Public
+    Permissions:\t""")
+        self.label12.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label14, 1, 5, 1, 1)
 
-		self.label15 = Gtk.Label()
-		self.label15.set_markup("\n\t" + public_perms + "\t")
-		self.label15.set_justify(Gtk.Justification.LEFT)
-		self.page1.attach(self.label15, 2, 5, 1, 1)
+        self.label15 = Gtk.Label()
+        self.label15.set_markup("\n\t" + public_perms + "\t")
+        self.label15.set_justify(Gtk.Justification.LEFT)
+        self.page1.attach(self.label15, 2, 5, 1, 1)
 
-		self.button1 = Gtk.Button.new_with_label("Delete")
-		self.button1.connect("clicked", self.delete)
-		self.grid.attach(self.button1, 4, 3, 1, 1)
+        self.button1 = Gtk.Button.new_with_label("Delete")
+        self.button1.connect("clicked", self.delete)
+        self.grid.attach(self.button1, 4, 3, 1, 1)
 
-		self.button2 = Gtk.Button.new_with_label("Exit")
-		self.button2.connect("clicked", self.exit)
-		self.grid.attach(self.button2, 1, 3, 1, 1)
+        self.button2 = Gtk.Button.new_with_label("Exit")
+        self.button2.connect("clicked", self.exit)
+        self.grid.attach(self.button2, 1, 3, 1, 1)
 
-	def delete(self, button):
-		try:
-			os.remove(self.file_path)
-		except IsADirectoryError:
-			rmtree(self.file_path)
+    def delete(self, button):
+        try:
+            os.remove(self.file_path)
+        except IsADirectoryError:
+            rmtree(self.file_path)
 
-		self.exit("clicked")
+        self.exit("clicked")
 
-	def exit(self, button):
-		self.set_name = [1]
-		self.destroy()
-		Gtk.main_quit("delete-event")
+    def exit(self, button):
+        self.set_name = [1]
+        self.destroy()
+        Gtk.main_quit("delete-event")
 
 def xdg_open(uri):
-	args = ['xdg-open']
-	path = str(uri)
-	if path.startswith('file://'):
-		path = path[7:]
-	if ("%20" in path):
-		path = path.split("%20")
-		path = " ".join(path)
-	args.append(path)
-	if os.fork() == 0:
-		Popen(args)
-		os._exit(0)
-	else:
-		os.wait()
+    args = ['xdg-open']
+    path = str(uri)
+    if path.startswith('file://'):
+        path = path[7:]
+    if ("%20" in path):
+        path = path.split("%20")
+        path = " ".join(path)
+    args.append(path)
+    if os.fork() == 0:
+        Popen(args)
+        os._exit(0)
+    else:
+        os.wait()
 
 def File_Manager():
-	DBusGMainLoop(set_as_default=True)
+    DBusGMainLoop(set_as_default=True)
 
-	bus = dbus.SessionBus()
-	name = dbus.service.BusName("org.xfce.FileManager", bus)
-	object = signal_handlers(bus, '/org/xfce/FileManager')
+    bus = dbus.SessionBus()
+    name = dbus.service.BusName("org.xfce.FileManager", bus)
+    object = signal_handlers(bus, '/org/xfce/FileManager')
 
-	mainloop = GLib.MainLoop()
-	mainloop.run()
+    mainloop = GLib.MainLoop()
+    mainloop.run()
 
 def show_naming_GUI(content_type, file_name):
-	window = naming_GUI(content_type, file_name)
-	window.set_decorated(True)
-	window.set_resizable(False)
-	window.set_position(Gtk.WindowPosition.CENTER)
-	window.connect("delete-event", naming_GUI.exit)
-	window.show_all()
-	Gtk.main()
-	return window.set_name
+    window = naming_GUI(content_type, file_name)
+    window.set_decorated(True)
+    window.set_resizable(False)
+    window.set_position(Gtk.WindowPosition.CENTER)
+    window.connect("delete-event", naming_GUI.exit)
+    window.show_all()
+    Gtk.main()
+    return window.set_name
 
 def show_properties_GUI(file_path):
-	window = properties_GUI(file_path)
-	window.set_decorated(True)
-	window.set_resizable(False)
-	window.set_position(Gtk.WindowPosition.CENTER)
-	window.connect("delete-event", properties_GUI.exit)
-	window.show_all()
-	Gtk.main()
+    window = properties_GUI(file_path)
+    window.set_decorated(True)
+    window.set_resizable(False)
+    window.set_position(Gtk.WindowPosition.CENTER)
+    window.connect("delete-event", properties_GUI.exit)
+    window.show_all()
+    Gtk.main()
 
 
 # Make it easier for us to print to stderr
 def eprint(*args, **kwargs):
-	print(*args, file=stderr, **kwargs)
+    print(*args, file=stderr, **kwargs)
 
 
 if __name__ == '__main__':
-	#get length of argv
-	argc = len(argv)
-	VERSION = "0.0.9-alpha0"
-	HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
-	if (argc <= 1):
-		File_Manager()
-	elif ((argv[1] == "-h") or (argv[1] == "--help")):
-		print(HELP)
-	elif ((argv[1] == "-v") or (argv[1] == "--version")):
-		print(VERSION)
-	elif ((argv[1] == "-b") or (argv[1] == "--background")):
-		Popen("xfce4-desktop-service")
-	else:
-		eprint("%s :  argument not recognized" % (argv[1]))
-		print(HELP)
+    #get length of argv
+    argc = len(argv)
+    VERSION = "0.1.0-alpha1"
+    HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
+    if (argc <= 1):
+        File_Manager()
+    elif ((argv[1] == "-h") or (argv[1] == "--help")):
+        print(HELP)
+    elif ((argv[1] == "-v") or (argv[1] == "--version")):
+        print(VERSION)
+    elif ((argv[1] == "-b") or (argv[1] == "--background")):
+        Popen("xfce4-desktop-service")
+    else:
+        eprint("%s :  argument not recognized" % (argv[1]))
+        print(HELP)
 
