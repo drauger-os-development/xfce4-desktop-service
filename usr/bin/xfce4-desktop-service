@@ -73,7 +73,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sasasss', out_signature='')
     def CopyTo(self, working_directory, source_files, target_files, display, startup_id):
         for each in range(len(source_files)):
-            if (source_files[each][0:7] == "file://"):
+            if (source_files[each][:7] == "file://"):
                 source_files[each] = list(str(source_files[each]))
                 x = 0
                 while x < 7:
@@ -83,7 +83,7 @@ class signal_handlers(dbus.service.Object):
             if ("%20" in source_files[each]):
                 source_files[each] = source_files[each].split("%20")
                 source_files[each] = " ".join(source_files[each])
-            if (target_files[each][0:7] == "file://"):
+            if (target_files[each][:7] == "file://"):
                 target_files[each] = list(str(target_files[each]))
                 x = 0
                 while x < 7:
@@ -100,7 +100,7 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFile(self, parent_directory, content_type, display, startup_id):
-        if (parent_directory[0:7] == "file://"):
+        if (parent_directory[:7] == "file://"):
             parent_directory = list(str(parent_directory))
             x = 0
             while x < 7:
@@ -108,17 +108,17 @@ class signal_handlers(dbus.service.Object):
                 x = x + 1
             parent_directory = "".join(parent_directory)
         name = show_naming_GUI(content_type, None)
-        if (name[len(name) - 1] == 1):
+        if (name[-1] == 1):
             return None
         else:
             name = name[0]
         if (content_type == "inode/directory"):
-            if (parent_directory[len(parent_directory) - 1] == "/"):
+            if (parent_directory[-1] == "/"):
                 os.mkdir(parent_directory + "/" + name)
             else:
                 os.mkdir(parent_directory + "/" + name)
         else:
-            if (parent_directory[len(parent_directory) - 1] == "/"):
+            if (parent_directory[-1] == "/"):
                 with open(parent_directory + "/" + name, "w+") as new_file:
                     new_file.write("")
             else:
@@ -128,7 +128,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
     def UnlinkFiles(self, working_directory, filenames, display, startup_id):
         for each in filenames:
-            if (each[0:7] == "file://"):
+            if (each[:7] == "file://"):
                 each = list(str(each))
                 x = 0
                 while x < 7:
@@ -157,24 +157,28 @@ class signal_handlers(dbus.service.Object):
             content_type = "inode/directory"
         else:
             content_type = "file"
-        name = show_naming_GUI(content_type, (path.split("/"))[len(path.split("/")) - 1])
-        if (name[len(name) - 1] == 1):
-            return None
+        name = show_naming_GUI(content_type, (path.split("/"))[-1])
+        if (name[-1] == 1):
+            return 1
         else:
             name = name[0]
         new_path = path.split("/")
-        del(new_path[len(new_path) - 1])
+        del(new_path[-1])
         new_path = "/".join(new_path)
         new_path = new_path + "/" + name
         os.rename(path, new_path)
+        return 0
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
         template_path = template_path.split("/")
-        parent_directory = parent_directory + "/" + template_path[len(template_path) - 1]
+        parent_directory = parent_directory + "/" + template_path[-1]
         template_path = "/".join(template_path)
         self.CopyTo(None, [template_path], [parent_directory], None, None)
-        self.RenameFile(parent_directory, None, None)
+        result = self.RenameFile(parent_directory, None, None)
+        if result == 1:
+            self.UnlinkFiles("", [parent_directory], "", "")
+
 
     @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
     def DisplayTrash(self, display, startup_id):
@@ -232,11 +236,11 @@ class naming_GUI(Gtk.Window):
         self.add(self.grid)
         self.set_icon_name("desktop-environment-xfce")
 
-        self.label = Gtk.Label()
-        self.label.set_markup("""
+        label = Gtk.Label()
+        label.set_markup("""
     What would you like to name this %s?\t""" % (content_type))
-        self.label.set_justify(Gtk.Justification.LEFT)
-        self.grid.attach(self.label, 1, 1, 3, 1)
+        label.set_justify(Gtk.Justification.LEFT)
+        self.grid.attach(label, 1, 1, 3, 1)
 
         self.name = Gtk.Entry()
         self.name.set_text(name)
@@ -246,37 +250,42 @@ class naming_GUI(Gtk.Window):
         self.name.grab_focus()
 
 
-        self.button1 = Gtk.Button.new_with_label("Okay -->")
-        self.button1.connect("clicked", self.done)
-        self.button1.set_can_default(True)
-        self.grid.attach(self.button1, 3, 3, 1, 1)
+        button1 = Gtk.Button.new_with_label("Okay -->")
+        button1.connect("clicked", self.done)
+        button1.set_can_default(True)
+        self.grid.attach(button1, 3, 3, 1, 1)
 
-        self.button2 = Gtk.Button.new_with_label("Exit")
-        self.button2.connect("clicked", self.exit)
-        self.button2.set_can_default(False)
-        self.grid.attach(self.button2, 1, 3, 1, 1)
+        button2 = Gtk.Button.new_with_label("Exit")
+        button2.connect("clicked", self.exit)
+        button2.set_can_default(False)
+        self.grid.attach(button2, 1, 3, 1, 1)
 
-        self.button1.grab_default()
+        button1.grab_default()
 
-        print(self.button1.has_default())
+        self.set_name = None
+
+        print(button1.has_default())
 
 
     def done(self, button):
-        self.set_name = [self.name.get_text(),0]
+        """Return Data"""
+        self.set_name = [self.name.get_text(), 0]
         self.destroy()
         Gtk.main_quit("delete-event")
         return self.set_name
 
     def exit(self, button):
+        """Exit UI"""
         self.set_name = [1]
         self.destroy()
         Gtk.main_quit("delete-event")
         return self.set_name
 
 class properties_GUI(Gtk.Window):
+    """Properties GUI"""
     def __init__(self, file_path):
         self.file_path = file_path
-        self.file_name = self.file_path.split("/")[len(self.file_path.split("/")) - 1]
+        self.file_name = self.file_path.split("/")[-1]
         mime = magic.Magic(mime=True)
 
         try:
