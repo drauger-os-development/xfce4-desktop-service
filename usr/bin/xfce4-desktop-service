@@ -312,15 +312,6 @@ class properties_GUI(Gtk.Window):
         self.file_owner = getpwuid(os.stat(self.file_path).st_uid).pw_name
         self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
 
-        # print("PATH: " + self.file_path)
-        # print("NAME: " + self.file_name)
-        # print("TYPE: " + self.file_mime)
-        # if (self.file_mime != "inode/directory"):
-            # print("SIZE: %s" % (self.file_size))
-        # print("PERM: " + self.file_permissions)
-        # print("OWNER: " + self.file_owner)
-        # print("GROUP: " + self.file_group)
-
         Gtk.Window.__init__(self, title="Desktop Service")
         self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
         self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
