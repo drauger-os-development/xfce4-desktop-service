@@ -33,6 +33,8 @@ from shutil import copyfile, rmtree, SameFileError
 from pwd import getpwuid
 import os
 import magic
+import signal
+
 # Octal Translation Dict
 octal_perms = {0: "No Permissions",
                1: "Execute",
@@ -42,6 +44,8 @@ octal_perms = {0: "No Permissions",
                5: "Read, Execute",
                6: "Read, Write",
                7: "Full Permissions"}
+# PID File location
+pid_file = "/tmp/xfce4-desktop-service.pid"
 
 
 class signal_handlers(dbus.service.Object):
@@ -337,8 +341,7 @@ class properties_GUI(Gtk.Window):
         self.grid.attach(self.stack_switcher, 2, 1, 2, 1)
 
         self.label = Gtk.Label()
-        self.label.set_markup("""
-    Name:\t""")
+        self.label.set_markup("""\n\tName:\t""")
         self.label.set_justify(Gtk.Justification.LEFT)
         self.page0.attach(self.label, 1, 1, 1, 1)
 
@@ -348,8 +351,7 @@ class properties_GUI(Gtk.Window):
         self.page0.attach(self.label1, 2, 1, 1, 1)
 
         self.label2 = Gtk.Label()
-        self.label2.set_markup("""
-    Type:\t""")
+        self.label2.set_markup("""\n\tType:\t""")
         self.label2.set_justify(Gtk.Justification.LEFT)
         self.page0.attach(self.label2, 1, 2, 1, 1)
 
@@ -359,8 +361,7 @@ class properties_GUI(Gtk.Window):
         self.page0.attach(self.label3, 2, 2, 1, 1)
 
         self.label4 = Gtk.Label()
-        self.label4.set_markup("""
-    Location:\t""")
+        self.label4.set_markup("""\n\tLocation:\t""")
         self.label4.set_justify(Gtk.Justification.LEFT)
         self.page0.attach(self.label4, 1, 3, 1, 1)
 
@@ -370,8 +371,7 @@ class properties_GUI(Gtk.Window):
         self.page0.attach(self.label5, 2, 3, 1, 1)
 
         self.label6 = Gtk.Label()
-        self.label6.set_markup("""
-    Owner:\t""")
+        self.label6.set_markup("""\n\tOwner:\t""")
         self.label6.set_justify(Gtk.Justification.LEFT)
         self.page1.attach(self.label6, 1, 1, 1, 1)
 
@@ -396,8 +396,7 @@ class properties_GUI(Gtk.Window):
         self.page1.attach(self.label9, 2, 2, 1, 1)
 
         self.label10 = Gtk.Label()
-        self.label10.set_markup("""
-    Group:\t""")
+        self.label10.set_markup("""\n\tGroup:\t""")
         self.label10.set_justify(Gtk.Justification.LEFT)
         self.page1.attach(self.label10, 1, 3, 1, 1)
 
@@ -463,16 +462,22 @@ def xdg_open(uri):
         os.wait()
 
 def File_Manager():
-    DBusGMainLoop(set_as_default=True)
+    """Start up DBus listeners"""
+    try:
+        signal.signal(signal.SIGTERM, killer_signal_handler)
+        DBusGMainLoop(set_as_default=True)
 
-    bus = dbus.SessionBus()
-    name = dbus.service.BusName("org.xfce.FileManager", bus)
-    object = signal_handlers(bus, '/org/xfce/FileManager')
+        bus = dbus.SessionBus()
+        name = dbus.service.BusName("org.xfce.FileManager", bus)
+        object = signal_handlers(bus, '/org/xfce/FileManager')
 
-    mainloop = GLib.MainLoop()
-    mainloop.run()
+        mainloop = GLib.MainLoop()
+        mainloop.run()
+    except:
+        killer_signal_handler("", "")
 
 def show_naming_GUI(content_type, file_name):
+    """Show the Nameing GUI"""
     window = naming_GUI(content_type, file_name)
     window.set_decorated(True)
     window.set_resizable(False)
@@ -519,20 +524,49 @@ def translate_full_octal(octal):
     return output
 
 
+def killer_signal_handler(signal, frame):
+    """Handle Closing signals"""
+    os.remove(pid_file)
+
+
 if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
-    VERSION = "0.1.1-alpha1"
-    HELP = "xfce4-desktop-service, Version: %s\n\n\t-b,--background\t\tStart service in the background.\n\t-h, --help\t\tShow this help dialog and exit.\n\t-v,--version\t\tShow the current version.\n\nPass nothing to start the desktop service on the current process." % (VERSION)
+    VERSION = "0.1.3-alpha1"
+    HELP = """xfce4-desktop-service, Version: %s
+
+    -b, --background        Start service in the background.
+    -h, --help              Show this help dialog and exit.
+    -k, --kill              Kill currently running background process.
+    -v, --version           Show the current version.
+
+    Pass nothing to start the desktop service on the current process.""" % (VERSION)
     if (argc <= 1):
+        if not os.path.isfile(pid_file):
+            with open(pid_file, "w+") as file:
+                file.write(str(os.getpid()))
         File_Manager()
     elif ((argv[1] == "-h") or (argv[1] == "--help")):
         print(HELP)
     elif ((argv[1] == "-v") or (argv[1] == "--version")):
         print(VERSION)
     elif ((argv[1] == "-b") or (argv[1] == "--background")):
-        Popen("xfce4-desktop-service")
+        process = Popen("xfce4-desktop-service")
+        with open(pid_file, "w+") as file:
+            file.write(str(process.pid))
+    elif ((argv[1] == "-k") or (argv[1] == "--kill")):
+        if not os.path.isfile(pid_file):
+            eprint("ERROR: No currently running background process.")
+            exit(2)
+        with open(pid_file, "r") as file:
+            pid = file.read()
+        try:
+            os.kill(int(pid), signal.SIGTERM)
+        except ProcessLookupError:
+            eprint("ERROR: No currently running background process.")
+            os.remove(pid_file)
+            exit(2)
+        os.remove(pid_file)
     else:
         eprint("%s :  argument not recognized" % (argv[1]))
         print(HELP)
-
