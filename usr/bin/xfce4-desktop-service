@@ -21,6 +21,10 @@
 #  MA 02110-1301, USA.
 #
 #
+"""Desktop Service for xfce4
+
+This service provides desktop icon's functionality in the absence of Thunar
+"""
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
@@ -49,61 +53,71 @@ pid_file = "/tmp/xfce4-desktop-service.pid"
 
 
 class signal_handlers(dbus.service.Object):
+    """Signal Handlers for DBus"""
 
     @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
     def ShowFolders(self, uris, startupId):
+        """Open folder passed in the default file manager"""
         xdg_open(uris[0])
 
     @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
     def ShowItems(self, uris, startupId):
+        """Open items passed in with the default method"""
         xdg_open(uris[0])
 
     @dbus.service.method("org.xfce.FileManager1", in_signature='ass', out_signature='')
     def ShowItemProperties(self, uris, startupId):
+        """Show Properties of Item"""
         xdg_open(uris[0])
 
     @dbus.service.method("org.xfce.FileManager1", in_signature='', out_signature='')
     def Exit(self):
+        """Quit"""
         mainloop.quit()
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def Launch(self, uri, display, startup_id):
+        """Launch uri"""
         xdg_open(uri)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssasss', out_signature='')
     def Execute(self, working_directory, uri, filenames, display, startup_id):
+        """Execute uri"""
         xdg_open(uri)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
     def LaunchFiles(self, working_directory, filenames, display, startup_id):
+        """Launch multiple files"""
         for each in filenames:
             xdg_open(each)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def DisplayFolder(self, uri, display, startup_id):
+        """Open Folder"""
         xdg_open(uri)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sasasss', out_signature='')
     def CopyTo(self, working_directory, source_files, target_files, display, startup_id):
+        """Copy files from Point A to Point B"""
         for each in range(len(source_files)):
-            if (source_files[each][:7] == "file://"):
+            if source_files[each][:7] == "file://":
                 source_files[each] = list(str(source_files[each]))
                 x = 0
                 while x < 7:
-                    del(source_files[each][0])
+                    del source_files[each][0]
                     x = x + 1
                 source_files[each] = "".join(source_files[each])
-            if ("%20" in source_files[each]):
+            if "%20" in source_files[each]:
                 source_files[each] = source_files[each].split("%20")
                 source_files[each] = " ".join(source_files[each])
-            if (target_files[each][:7] == "file://"):
+            if target_files[each][:7] == "file://":
                 target_files[each] = list(str(target_files[each]))
                 x = 0
                 while x < 7:
-                    del(target_files[each][0])
+                    del target_files[each][0]
                     x = x + 1
                 target_files[each] = "".join(target_files[each])
-            if ("%20" in target_files[each]):
+            if "%20" in target_files[each]:
                 target_files[each] = target_files[each].split("%20")
                 target_files[each] = " ".join(target_files[each])
             try:
@@ -113,25 +127,25 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFile(self, parent_directory, content_type, display, startup_id):
-        if (parent_directory[:7] == "file://"):
+        """Create a New File"""
+        if parent_directory[:7] == "file://":
             parent_directory = list(str(parent_directory))
             x = 0
             while x < 7:
-                del(parent_directory[0])
+                del parent_directory[0]
                 x = x + 1
             parent_directory = "".join(parent_directory)
         name = show_naming_GUI(content_type, None)
-        if (name[-1] == 1):
+        if name[-1] == 1:
             return None
-        else:
-            name = name[0]
-        if (content_type == "inode/directory"):
-            if (parent_directory[-1] == "/"):
+        name = name[0]
+        if content_type == "inode/directory":
+            if parent_directory[-1] == "/":
                 os.mkdir(parent_directory + "/" + name)
             else:
                 os.mkdir(parent_directory + "/" + name)
         else:
-            if (parent_directory[-1] == "/"):
+            if parent_directory[-1] == "/":
                 with open(parent_directory + "/" + name, "w+") as new_file:
                     new_file.write("")
             else:
@@ -140,15 +154,16 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
     def UnlinkFiles(self, working_directory, filenames, display, startup_id):
+        """Delete multiple files"""
         for each in filenames:
-            if (each[:7] == "file://"):
+            if each[:7] == "file://":
                 each = list(str(each))
                 x = 0
                 while x < 7:
-                    del(each[0])
+                    del each[0]
                     x = x + 1
                 each = "".join(each)
-            if ("%20" in each):
+            if "%20" in each:
                 each = each.split("%20")
                 each = " ".join(each)
             try:
@@ -158,25 +173,25 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
+        """Rename a file"""
         filename = str(filename)
         if filename.startswith('file://'):
             path = filename[7:]
         else:
             path = filename
-        if ("%20" in path):
+        if "%20" in path:
             path = path.split("%20")
             path = " ".join(path)
-        if (os.path.isdir(path)):
+        if os.path.isdir(path):
             content_type = "inode/directory"
         else:
             content_type = "file"
         name = show_naming_GUI(content_type, (path.split("/"))[-1])
-        if (name[-1] == 1):
+        if name[-1] == 1:
             return 1
-        else:
-            name = name[0]
+        name = name[0]
         new_path = path.split("/")
-        del(new_path[-1])
+        del new_path[-1]
         new_path = "/".join(new_path)
         new_path = new_path + "/" + name
         os.rename(path, new_path)
@@ -184,6 +199,7 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
+        """Create a new file from the specified template"""
         template_path = template_path.split("/")
         parent_directory = parent_directory + "/" + template_path[-1]
         template_path = "/".join(template_path)
@@ -195,16 +211,18 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
     def DisplayTrash(self, display, startup_id):
-        Popen(["xdg-open","trash://"])
+        """Open Trash folder"""
+        Popen(["xdg-open", "trash://"])
 
     @dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
     def MoveToTrash(self, filenames, display, startup_id):
+        """Move file/folder to trash"""
         args = ["gio", "trash"]
         for uri in filenames:
             path = str(uri)
             if path.startswith('file://'):
                 path = path[7:]
-            if ("%20" in path):
+            if "%20" in path:
                 path = path.split("%20")
                 path = " ".join(path)
             args.append(path)
@@ -218,34 +236,37 @@ class signal_handlers(dbus.service.Object):
 
     @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
     def EmptyTrash(self, display, startup_id):
+        """Empty trash"""
         Popen(["gio", "trash", "--empty"])
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def DisplayFileProperties(self, uri, display, startup_id):
+        """Show file properties"""
         path = str(uri)
         if path.startswith('file://'):
             path = path[7:]
-        if ("%20" in path):
+        if "%20" in path:
             path = path.split("%20")
             path = " ".join(path)
         show_properties_GUI(path)
 
 class naming_GUI(Gtk.Window):
+    """UI for naming Files/Folders"""
     def __init__(self, content_type, name):
-        if (content_type == "inode/directory"):
+        if content_type == "inode/directory":
             content_type = "directory"
         else:
             content_type = "file"
 
-        if (name == None):
-            if (content_type == "file"):
+        if name is None:
+            if content_type == "file":
                 name = "Untitled File"
-            elif (content_type == "directory"):
+            elif content_type == "directory":
                 name = "Untitled Folder"
 
         # Initialize the Window
         Gtk.Window.__init__(self, title="Desktop Service")
-        self.grid=Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+        self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
         self.add(self.grid)
         self.set_icon_name("desktop-environment-xfce")
 
@@ -297,6 +318,7 @@ class naming_GUI(Gtk.Window):
 class properties_GUI(Gtk.Window):
     """Properties GUI"""
     def __init__(self, file_path):
+        """Initialize Properties GUI"""
         self.file_path = file_path
         self.file_name = self.file_path.split("/")[-1]
         mime = magic.Magic(mime=True)
@@ -322,6 +344,7 @@ class properties_GUI(Gtk.Window):
         self.main()
 
     def main(self):
+        """Main properties window"""
         self.stack = Gtk.Stack()
         self.stack.add_titled(self.page0, "page0", "Basic")
         self.stack.add_titled(self.page1, "page1", "Permissions")
@@ -425,6 +448,7 @@ class properties_GUI(Gtk.Window):
         self.grid.attach(self.button2, 1, 3, 1, 1)
 
     def delete(self, button):
+        """Delete current file/folder"""
         try:
             os.remove(self.file_path)
         except IsADirectoryError:
@@ -433,16 +457,18 @@ class properties_GUI(Gtk.Window):
         self.exit("clicked")
 
     def exit(self, button):
+        """close properties GUI"""
         self.set_name = [1]
         self.destroy()
         Gtk.main_quit("delete-event")
 
 def xdg_open(uri):
+    """Open the URI using the default method"""
     args = ['xdg-open']
     path = str(uri)
     if path.startswith('file://'):
         path = path[7:]
-    if ("%20" in path):
+    if "%20" in path:
         path = path.split("%20")
         path = " ".join(path)
     args.append(path)
@@ -479,6 +505,7 @@ def show_naming_GUI(content_type, file_name):
     return window.set_name
 
 def show_properties_GUI(file_path):
+    """Display the properties GUI for the file at file_path"""
     window = properties_GUI(file_path)
     window.set_decorated(True)
     window.set_resizable(False)
@@ -488,8 +515,8 @@ def show_properties_GUI(file_path):
     Gtk.main()
 
 
-# Make it easier for us to print to stderr
 def eprint(*args, **kwargs):
+    """Make it easier for us to print to stderr"""
     print(*args, file=stderr, **kwargs)
 
 
@@ -532,7 +559,7 @@ if __name__ == '__main__':
     -v, --version           Show the current version.
 
     Pass nothing to start the desktop service on the current process.""" % (VERSION)
-    if (argc <= 1):
+    if argc <= 1:
         if not os.path.isfile(pid_file):
             with open(pid_file, "w+") as file:
                 file.write(str(os.getpid()))
