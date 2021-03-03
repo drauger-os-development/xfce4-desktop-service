@@ -411,7 +411,7 @@ class properties_GUI(Gtk.Window):
         self.page1.attach(self.label12, 1, 4, 1, 1)
 
         self.label13 = Gtk.Label()
-        self.label13.set_markup("\n\t" + owner_perms + "\t")
+        self.label13.set_markup("\n\t" + group_perms + "\t")
         self.label13.set_justify(Gtk.Justification.LEFT)
         self.page1.attach(self.label13, 2, 4, 1, 1)
 
