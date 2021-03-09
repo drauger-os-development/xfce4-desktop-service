@@ -280,6 +280,7 @@ class naming_GUI(Gtk.Window):
         self.name.set_text(name)
         self.name.set_can_default(False)
         self.name.set_can_focus(True)
+        self.name.set_activates_default(True)
         self.grid.attach(self.name, 1, 2, 3, 1)
         self.name.grab_focus()
 
@@ -294,12 +295,11 @@ class naming_GUI(Gtk.Window):
         button2.set_can_default(False)
         self.grid.attach(button2, 1, 3, 1, 1)
 
-        button1.grab_default()
-
         self.set_name = None
 
-        print(button1.has_default())
-
+        self.set_default(button1)
+        # button1.grab_default() would be the preferred way to set default
+        # but that function does not seem to work properly at this time
 
     def done(self, button):
         """Return Data"""
