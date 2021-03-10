@@ -494,7 +494,7 @@ def File_Manager():
         killer_signal_handler("", "")
 
 def show_naming_GUI(content_type, file_name):
-    """Show the Nameing GUI"""
+    """Show the Naming GUI"""
     window = naming_GUI(content_type, file_name)
     window.set_decorated(True)
     window.set_resizable(False)
