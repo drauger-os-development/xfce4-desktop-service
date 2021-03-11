@@ -285,6 +285,8 @@ class naming_GUI(Gtk.Window):
         self.grid.attach(self.name, 1, 2, 3, 1)
         self.name.grab_focus()
 
+        # enable window to receive key press events
+        self.connect("key-press-event", self.on_key_press_event)
 
         button1 = Gtk.Button.new_with_label("Okay -->")
         button1.connect("clicked", self.done)
@@ -302,6 +304,11 @@ class naming_GUI(Gtk.Window):
         # button1.grab_default() would be the preferred way to set default
         # but that function does not seem to work properly at this time
 
+    def on_key_press_event(self, widget, event):
+        """Handles keyy press events for window"""
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit()
+
     def done(self, button):
         """Return Data"""
         self.set_name = [self.name.get_text(), 0]
@@ -309,7 +316,7 @@ class naming_GUI(Gtk.Window):
         Gtk.main_quit("delete-event")
         return self.set_name
 
-    def exit(self, button):
+    def exit(self, button = "Window"):
         """Exit UI"""
         self.set_name = [1]
         self.destroy()
