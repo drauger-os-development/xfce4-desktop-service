@@ -31,6 +31,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 from subprocess import Popen
 import gi
 gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
 from gi.repository import GLib, GObject, Gtk, Gdk
 from sys import argv, stderr
 from shutil import copyfile, rmtree, SameFileError
@@ -335,6 +336,10 @@ class properties_GUI(Gtk.Window):
         self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
 
         Gtk.Window.__init__(self, title="Desktop Service")
+
+        # enable window to receive key press events
+        self.connect("key-press-event", self.on_key_press_event)
+
         self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
         self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
         self.page1 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
@@ -342,6 +347,11 @@ class properties_GUI(Gtk.Window):
         self.set_icon_name("desktop-environment-xfce")
 
         self.main()
+
+    def on_key_press_event(self, widget, event):
+        """Handles keyy press events for window"""
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit()
 
     def main(self):
         """Main properties window"""
@@ -456,8 +466,11 @@ class properties_GUI(Gtk.Window):
 
         self.exit("clicked")
 
-    def exit(self, button):
-        """close properties GUI"""
+    def exit(self, button = "Window"):
+        """close properties GUI
+            param button: name of button that is calling exit
+                default value is for when the window calls exit
+        """
         self.set_name = [1]
         self.destroy()
         Gtk.main_quit("delete-event")
