@@ -31,6 +31,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 from subprocess import Popen
 import gi
 gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
 from gi.repository import GLib, GObject, Gtk, Gdk
 from sys import argv, stderr
 from shutil import copyfile, rmtree, SameFileError
@@ -137,7 +138,7 @@ class signal_handlers(dbus.service.Object):
             parent_directory = "".join(parent_directory)
         name = show_naming_GUI(content_type, None)
         if name[-1] == 1:
-            return None
+            return
         name = name[0]
         if content_type == "inode/directory":
             if parent_directory[-1] == "/":
@@ -174,28 +175,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
         """Rename a file"""
-        filename = str(filename)
-        if filename.startswith('file://'):
-            path = filename[7:]
-        else:
-            path = filename
-        if "%20" in path:
-            path = path.split("%20")
-            path = " ".join(path)
-        if os.path.isdir(path):
-            content_type = "inode/directory"
-        else:
-            content_type = "file"
-        name = show_naming_GUI(content_type, (path.split("/"))[-1])
-        if name[-1] == 1:
-            return 1
-        name = name[0]
-        new_path = path.split("/")
-        del new_path[-1]
-        new_path = "/".join(new_path)
-        new_path = new_path + "/" + name
-        os.rename(path, new_path)
-        return 0
+        self.custom_rename_file(filename)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
@@ -204,7 +184,7 @@ class signal_handlers(dbus.service.Object):
         parent_directory = parent_directory + "/" + template_path[-1]
         template_path = "/".join(template_path)
         self.CopyTo(None, [template_path], [parent_directory], None, None)
-        result = self.RenameFile(parent_directory, None, None)
+        result = self.custom_rename_file(parent_directory)
         if result == 1:
             self.UnlinkFiles("", [parent_directory], "", "")
 
@@ -250,6 +230,31 @@ class signal_handlers(dbus.service.Object):
             path = " ".join(path)
         show_properties_GUI(path)
 
+    def custom_rename_file(self, file_name):
+        '''renames a file'''
+        file_name = str(file_name)
+        if file_name.startswith('file://'):
+            path = file_name[7:]
+        else:
+            path = file_name
+        if "%20" in path:
+            path = path.split("%20")
+            path = " ".join(path)
+        if os.path.isdir(path):
+            content_type = "inode/directory"
+        else:
+            content_type = "file"
+        name = show_naming_GUI(content_type, (path.split("/"))[-1])
+        if name[-1] == 1:
+            return 1
+        name = name[0]
+        new_path = path.split("/")
+        del new_path[-1]
+        new_path = "/".join(new_path)
+        new_path = new_path + "/" + name
+        os.rename(path, new_path)
+        return 0
+
 class naming_GUI(Gtk.Window):
     """UI for naming Files/Folders"""
     def __init__(self, content_type, name):
@@ -284,6 +289,8 @@ class naming_GUI(Gtk.Window):
         self.grid.attach(self.name, 1, 2, 3, 1)
         self.name.grab_focus()
 
+        # enable window to receive key press events
+        self.connect("key-press-event", self.on_key_press_event)
 
         button1 = Gtk.Button.new_with_label("Okay -->")
         button1.connect("clicked", self.done)
@@ -301,6 +308,11 @@ class naming_GUI(Gtk.Window):
         # button1.grab_default() would be the preferred way to set default
         # but that function does not seem to work properly at this time
 
+    def on_key_press_event(self, widget, event):
+        """Handles keyy press events for window"""
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit("esc key pressed")
+
     def done(self, button):
         """Return Data"""
         self.set_name = [self.name.get_text(), 0]
@@ -308,7 +320,7 @@ class naming_GUI(Gtk.Window):
         Gtk.main_quit("delete-event")
         return self.set_name
 
-    def exit(self, button):
+    def exit(self, message):
         """Exit UI"""
         self.set_name = [1]
         self.destroy()
@@ -335,6 +347,10 @@ class properties_GUI(Gtk.Window):
         self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
 
         Gtk.Window.__init__(self, title="Desktop Service")
+
+        # enable window to receive key press events
+        self.connect("key-press-event", self.on_key_press_event)
+
         self.grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
         self.page0 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
         self.page1 = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
@@ -342,6 +358,11 @@ class properties_GUI(Gtk.Window):
         self.set_icon_name("desktop-environment-xfce")
 
         self.main()
+
+    def on_key_press_event(self, widget, event):
+        """Handles keyy press events for window"""
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit("esc key pressed")
 
     def main(self):
         """Main properties window"""
@@ -456,7 +477,7 @@ class properties_GUI(Gtk.Window):
 
         self.exit("clicked")
 
-    def exit(self, button):
+    def exit(self, message):
         """close properties GUI"""
         self.set_name = [1]
         self.destroy()
@@ -494,7 +515,7 @@ def File_Manager():
         killer_signal_handler("", "")
 
 def show_naming_GUI(content_type, file_name):
-    """Show the Nameing GUI"""
+    """Show the Naming GUI"""
     window = naming_GUI(content_type, file_name)
     window.set_decorated(True)
     window.set_resizable(False)
