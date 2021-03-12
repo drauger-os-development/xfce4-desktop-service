@@ -75,7 +75,6 @@ class signal_handlers(dbus.service.Object):
     def Exit(self):
         """Quit"""
         mainloop.quit()
-        return None
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def Launch(self, uri, display, startup_id):
@@ -139,7 +138,7 @@ class signal_handlers(dbus.service.Object):
             parent_directory = "".join(parent_directory)
         name = show_naming_GUI(content_type, None)
         if name[-1] == 1:
-            return None
+            return
         name = name[0]
         if content_type == "inode/directory":
             if parent_directory[-1] == "/":
@@ -177,7 +176,6 @@ class signal_handlers(dbus.service.Object):
     def RenameFile(self, filename, display, startup_id):
         """Rename a file"""
         self.custom_rename_file(filename)
-        return None
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
