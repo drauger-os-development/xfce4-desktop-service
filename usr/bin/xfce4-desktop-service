@@ -75,6 +75,7 @@ class signal_handlers(dbus.service.Object):
     def Exit(self):
         """Quit"""
         mainloop.quit()
+        return None
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def Launch(self, uri, display, startup_id):
@@ -175,28 +176,8 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
         """Rename a file"""
-        filename = str(filename)
-        if filename.startswith('file://'):
-            path = filename[7:]
-        else:
-            path = filename
-        if "%20" in path:
-            path = path.split("%20")
-            path = " ".join(path)
-        if os.path.isdir(path):
-            content_type = "inode/directory"
-        else:
-            content_type = "file"
-        name = show_naming_GUI(content_type, (path.split("/"))[-1])
-        if name[-1] == 1:
-            return 1
-        name = name[0]
-        new_path = path.split("/")
-        del new_path[-1]
-        new_path = "/".join(new_path)
-        new_path = new_path + "/" + name
-        os.rename(path, new_path)
-        return 0
+        self.custom_rename_file(filename)
+        return None
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
@@ -205,7 +186,7 @@ class signal_handlers(dbus.service.Object):
         parent_directory = parent_directory + "/" + template_path[-1]
         template_path = "/".join(template_path)
         self.CopyTo(None, [template_path], [parent_directory], None, None)
-        result = self.RenameFile(parent_directory, None, None)
+        result = self.custom_rename_file(parent_directory)
         if result == 1:
             self.UnlinkFiles("", [parent_directory], "", "")
 
@@ -250,6 +231,31 @@ class signal_handlers(dbus.service.Object):
             path = path.split("%20")
             path = " ".join(path)
         show_properties_GUI(path)
+
+    def custom_rename_file(self, file_name):
+        '''renames a file'''
+        file_name = str(file_name)
+        if file_name.startswith('file://'):
+            path = file_name[7:]
+        else:
+            path = file_name
+        if "%20" in path:
+            path = path.split("%20")
+            path = " ".join(path)
+        if os.path.isdir(path):
+            content_type = "inode/directory"
+        else:
+            content_type = "file"
+        name = show_naming_GUI(content_type, (path.split("/"))[-1])
+        if name[-1] == 1:
+            return 1
+        name = name[0]
+        new_path = path.split("/")
+        del new_path[-1]
+        new_path = "/".join(new_path)
+        new_path = new_path + "/" + name
+        os.rename(path, new_path)
+        return 0
 
 class naming_GUI(Gtk.Window):
     """UI for naming Files/Folders"""
