@@ -542,7 +542,7 @@ def killer_signal_handler(signal, frame):
 if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
-    VERSION = "0.1.4-alpha1"
+    VERSION = "0.1.5-alpha1"
     HELP = """xfce4-desktop-service, Version: %s
 
     -b, --background        Start service in the background.
