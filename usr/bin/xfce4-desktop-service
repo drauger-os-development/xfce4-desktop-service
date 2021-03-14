@@ -39,6 +39,7 @@ from pwd import getpwuid
 import os
 import magic
 import signal
+import urllib.parse
 
 # Octal Translation Dict
 octal_perms = {0: "No Permissions",
@@ -103,8 +104,10 @@ class signal_handlers(dbus.service.Object):
         for each in range(len(source_files)):
             if source_files[each][:7] == "file://":
                 source_files = source_files[7:]
+            source_files[each] = urllib.parse.unquote(source_files[each])
             if target_files[each][:7] == "file://":
                 target_files[each] = target_files[each][7:]
+            target_files[each] = urllib.parse.unquote(target_files[each])
             try:
                 copyfile(source_files[each], target_files[each])
             except SameFileError:
@@ -115,6 +118,7 @@ class signal_handlers(dbus.service.Object):
         """Create a New File"""
         if parent_directory[:7] == "file://":
             parent_directory = parent_directory[7:]
+        parent_directory = urllib.parse.unquote(parent_directory)
         name = show_naming_GUI(content_type, None)
         if name[-1] == 1:
             return
@@ -138,6 +142,7 @@ class signal_handlers(dbus.service.Object):
         for each in filenames:
             if each[:7] == "file://":
                 each = each[7:]
+            each = urllib.parse.unquote(each)
             try:
                 os.remove(each)
             except IsADirectoryError:
@@ -146,6 +151,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
         """Rename a file"""
+        filename = urllib.parse.unquote(filename)
         self._custom_rename_file(filename)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
@@ -173,9 +179,7 @@ class signal_handlers(dbus.service.Object):
             path = str(uri)
             if path.startswith('file://'):
                 path = path[7:]
-            if "%20" in path:
-                path = path.split("%20")
-                path = " ".join(path)
+            path = urllib.parse.unquote(path)
             args.append(path)
             if os.fork() == 0:
                 Popen(args)
@@ -196,9 +200,7 @@ class signal_handlers(dbus.service.Object):
         path = str(uri)
         if path.startswith('file://'):
             path = path[7:]
-        if "%20" in path:
-            path = path.split("%20")
-            path = " ".join(path)
+        path = urllib.parse.unquote(path)
         show_properties_GUI(path)
 
     def _custom_rename_file(self, file_name):
@@ -208,9 +210,7 @@ class signal_handlers(dbus.service.Object):
             path = file_name[7:]
         else:
             path = file_name
-        if "%20" in path:
-            path = path.split("%20")
-            path = " ".join(path)
+        path = urllib.parse.unquote(path)
         if os.path.isdir(path):
             content_type = "inode/directory"
         else:
