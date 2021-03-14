@@ -146,7 +146,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
         """Rename a file"""
-        self.custom_rename_file(filename)
+        self._custom_rename_file(filename)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFileFromTemplate(self, parent_directory, template_path, display, startup_id):
@@ -155,7 +155,7 @@ class signal_handlers(dbus.service.Object):
         parent_directory = parent_directory + "/" + template_path[-1]
         template_path = "/".join(template_path)
         self.CopyTo(None, [template_path], [parent_directory], None, None)
-        result = self.custom_rename_file(parent_directory)
+        result = self._custom_rename_file(parent_directory)
         if result == 1:
             self.UnlinkFiles("", [parent_directory], "", "")
 
@@ -201,7 +201,7 @@ class signal_handlers(dbus.service.Object):
             path = " ".join(path)
         show_properties_GUI(path)
 
-    def custom_rename_file(self, file_name):
+    def _custom_rename_file(self, file_name):
         '''renames a file'''
         file_name = str(file_name)
         if file_name.startswith('file://'):
