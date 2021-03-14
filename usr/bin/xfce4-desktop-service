@@ -102,25 +102,9 @@ class signal_handlers(dbus.service.Object):
         """Copy files from Point A to Point B"""
         for each in range(len(source_files)):
             if source_files[each][:7] == "file://":
-                source_files[each] = list(str(source_files[each]))
-                x = 0
-                while x < 7:
-                    del source_files[each][0]
-                    x = x + 1
-                source_files[each] = "".join(source_files[each])
-            if "%20" in source_files[each]:
-                source_files[each] = source_files[each].split("%20")
-                source_files[each] = " ".join(source_files[each])
+                source_files = source_files[7:]
             if target_files[each][:7] == "file://":
-                target_files[each] = list(str(target_files[each]))
-                x = 0
-                while x < 7:
-                    del target_files[each][0]
-                    x = x + 1
-                target_files[each] = "".join(target_files[each])
-            if "%20" in target_files[each]:
-                target_files[each] = target_files[each].split("%20")
-                target_files[each] = " ".join(target_files[each])
+                target_files[each] = target_files[each][7:]
             try:
                 copyfile(source_files[each], target_files[each])
             except SameFileError:
@@ -130,12 +114,7 @@ class signal_handlers(dbus.service.Object):
     def CreateFile(self, parent_directory, content_type, display, startup_id):
         """Create a New File"""
         if parent_directory[:7] == "file://":
-            parent_directory = list(str(parent_directory))
-            x = 0
-            while x < 7:
-                del parent_directory[0]
-                x = x + 1
-            parent_directory = "".join(parent_directory)
+            parent_directory = parent_directory[7:]
         name = show_naming_GUI(content_type, None)
         if name[-1] == 1:
             return
@@ -158,15 +137,7 @@ class signal_handlers(dbus.service.Object):
         """Delete multiple files"""
         for each in filenames:
             if each[:7] == "file://":
-                each = list(str(each))
-                x = 0
-                while x < 7:
-                    del each[0]
-                    x = x + 1
-                each = "".join(each)
-            if "%20" in each:
-                each = each.split("%20")
-                each = " ".join(each)
+                each = each[7:]
             try:
                 os.remove(each)
             except IsADirectoryError:
