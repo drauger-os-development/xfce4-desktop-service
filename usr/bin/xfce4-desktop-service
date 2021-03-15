@@ -103,7 +103,7 @@ class signal_handlers(dbus.service.Object):
         """Copy files from Point A to Point B"""
         for each in range(len(source_files)):
             if source_files[each][:7] == "file://":
-                source_files = source_files[7:]
+                source_files[each] = source_files[each][7:]
             source_files[each] = urllib.parse.unquote(source_files[each])
             if target_files[each][:7] == "file://":
                 target_files[each] = target_files[each][7:]
