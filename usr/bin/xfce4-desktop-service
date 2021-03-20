@@ -289,15 +289,23 @@ class naming_GUI(Gtk.Window):
     def done(self, button):
         """Return Data"""
         self.set_name = [self.name.get_text(), 0]
-        if "/" not in self.set_name[0]:
-            self.destroy()
-            Gtk.main_quit("delete-event")
-            return self.set_name
-        self.label.set_markup("""
+        if "/" in self.set_name[0]:
+            self.label.set_markup("""
     What would you like to name this %s?\t
 
     Character `/' not allowed in %s names.\t""" % (self.content_type,
                                                    self.content_type))
+
+        elif self.set_name[0] in ("", None):
+            self.label.set_markup("""
+    What would you like to name this %s?\t
+
+    Empty %s names not allowed.\t""" % (self.content_type,
+                                        self.content_type))
+        else:
+            self.destroy()
+            Gtk.main_quit("delete-event")
+            return self.set_name
         self.show_all()
 
     def exit(self, message):
