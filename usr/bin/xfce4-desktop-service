@@ -123,7 +123,7 @@ class signal_handlers(dbus.service.Object):
         else:
             is_directory = False
 
-        _custom_create_file(parent_directory, name, is_directory)
+        self._custom_create_file(parent_directory, name, is_directory)
         
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
