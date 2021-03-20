@@ -194,6 +194,9 @@ class signal_handlers(dbus.service.Object):
         show_properties_GUI(path)
 
     def _custom_create_file(self, parent_directory, file_name, is_directory):
+        if len(file_name) == 0:
+            return
+
         if file_name[-1] == 1:
             return
         if isinstance(file_name, list):
