@@ -221,11 +221,15 @@ class signal_handlers(dbus.service.Object):
         # use UI to get new filename from user
         name = show_naming_GUI(content_type, (path.split("/"))[-1])
         
+        # the case where the user exited instead of entering a filename
         if name[-1] == 1:
             return 1
 
-        # perform the rename action and return code
-        self._rename(name[0], path)
+        try:
+            # perform the rename action and return code
+            self._rename(name[0], path)
+        except ValueError as e:
+            eprint(e)
 
         return 0
     
@@ -248,12 +252,19 @@ class signal_handlers(dbus.service.Object):
         else:
             return "file"
 
+
     def _rename(self, new_filename, old_absolute_filename):
-        '''
-        renames a file
-        param new_filename: new filename string
-        param old_filename_w_path: the full filename with absolute path
-        '''
+        """renames a file
+        Keyword arguments:
+        new_filename (String) -- new filename string
+        old_filename_w_path (String) -- the full filename with absolute path
+
+        Exceptions
+        ValueError -- new_filename is empty or null byte
+        """
+        if new_filename == "":
+            raise ValueError("rename method passed empty filename")
+
         # ammend the new_filename on the old path
         split_path = old_absolute_filename.split("/")
         del split_path[-1] # remove the old filename
