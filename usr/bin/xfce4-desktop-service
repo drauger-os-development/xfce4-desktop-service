@@ -25,21 +25,23 @@
 
 This service provides desktop icon's functionality in the absence of Thunar
 """
-import dbus
-import dbus.service
-from dbus.mainloop.glib import DBusGMainLoop
 from subprocess import Popen
-import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gdk', '3.0')
-from gi.repository import GLib, GObject, Gtk, Gdk
 from sys import argv, stderr
 from shutil import copyfile, rmtree, SameFileError
 from pwd import getpwuid
 import os
-import magic
 import signal
 import urllib.parse
+import dbus
+import dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
+import gi
+import magic
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+from gi.repository import GLib, Gtk, Gdk
+
+
 
 # Octal Translation Dict
 octal_perms = {0: "No Permissions",
@@ -210,7 +212,7 @@ class signal_handlers(dbus.service.Object):
             os.mkdir(parent_directory + "/" + file_name)
         else:
             with open(parent_directory + "/" + file_name, "w+") as new_file:
-                    new_file.write("")
+                new_file.write("")
 
     def _custom_rename_file(self, file_name):
         '''renames a file'''
