@@ -116,25 +116,15 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFile(self, parent_directory, content_type, display, startup_id):
         """Create a New File"""
-        if parent_directory[:7] == "file://":
-            parent_directory = parent_directory[7:]
-        parent_directory = urllib.parse.unquote(parent_directory)
         name = show_naming_GUI(content_type, None)
-        if name[-1] == 1:
-            return
-        name = name[0]
+
         if content_type == "inode/directory":
-            if parent_directory[-1] == "/":
-                os.mkdir(parent_directory + "/" + name)
-            else:
-                os.mkdir(parent_directory + "/" + name)
+            is_directory = True
         else:
-            if parent_directory[-1] == "/":
-                with open(parent_directory + "/" + name, "w+") as new_file:
-                    new_file.write("")
-            else:
-                with open(parent_directory + "/" + name, "w+") as new_file:
-                    new_file.write("")
+            is_directory = False
+
+        self._custom_create_file(parent_directory, name, is_directory)
+        
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
     def UnlinkFiles(self, working_directory, filenames, display, startup_id):
@@ -203,28 +193,85 @@ class signal_handlers(dbus.service.Object):
         path = urllib.parse.unquote(path)
         show_properties_GUI(path)
 
+    def _custom_create_file(self, parent_directory, file_name, is_directory):
+        if len(file_name) == 0:
+            return
+
+        if file_name[-1] == 1:
+            return
+        if isinstance(file_name, list):
+            file_name = file_name[0]
+
+        if parent_directory[:7] == "file://":
+            parent_directory = parent_directory[7:]
+        parent_directory = urllib.parse.unquote(parent_directory)
+
+        if is_directory:
+            os.mkdir(parent_directory + "/" + file_name)
+        else:
+            with open(parent_directory + "/" + file_name, "w+") as new_file:
+                    new_file.write("")
+
     def _custom_rename_file(self, file_name):
         '''renames a file'''
+        # prep for naming GUI
+        path = self._remove_leading_file_URI(file_name)
+        content_type = self._find_content_type(path)
+
+        # use UI to get new filename from user
+        name = show_naming_GUI(content_type, (path.split("/"))[-1])
+        
+        # the case where the user exited instead of entering a filename
+        if name[-1] == 1:
+            return 1
+
+        try:
+            # perform the rename action and return code
+            self._rename(name[0], path)
+        except ValueError as e:
+            eprint(e)
+
+        return 0
+    
+    def _remove_leading_file_URI(self, file_name):
+        '''removes file:// in prep for renaming'''
         file_name = str(file_name)
+
+        # remove leading "file://"" if present
         if file_name.startswith('file://'):
             path = file_name[7:]
         else:
             path = file_name
-        path = urllib.parse.unquote(path)
+
+        return urllib.parse.unquote(path)
+
+    def _find_content_type(self, path):
+        '''determines if path is directory or file for renaming'''
         if os.path.isdir(path):
-            content_type = "inode/directory"
+            return "inode/directory"
         else:
-            content_type = "file"
-        name = show_naming_GUI(content_type, (path.split("/"))[-1])
-        if name[-1] == 1:
-            return 1
-        name = name[0]
-        new_path = path.split("/")
-        del new_path[-1]
-        new_path = "/".join(new_path)
-        new_path = new_path + "/" + name
-        os.rename(path, new_path)
-        return 0
+            return "file"
+
+
+    def _rename(self, new_filename, old_absolute_filename):
+        """renames a file
+        Keyword arguments:
+        new_filename (String) -- new filename string
+        old_filename_w_path (String) -- the full filename with absolute path
+
+        Exceptions
+        ValueError -- new_filename is empty or null byte
+        """
+        if new_filename == "":
+            raise ValueError("rename method passed empty filename")
+
+        # ammend the new_filename on the old path
+        split_path = old_absolute_filename.split("/")
+        del split_path[-1] # remove the old filename
+        split_path = "/".join(split_path) # add an "/" at the end
+        new_path = split_path + "/" + new_filename
+
+        os.rename(old_absolute_filename, new_path)
 
 class naming_GUI(Gtk.Window):
     """UI for naming Files/Folders"""
