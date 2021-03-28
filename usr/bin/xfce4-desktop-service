@@ -124,7 +124,7 @@ class signal_handlers(dbus.service.Object):
             is_directory = False
 
         self._custom_create_file(parent_directory, name, is_directory)
-        
+
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sasss', out_signature='')
     def UnlinkFiles(self, working_directory, filenames, display, startup_id):
@@ -220,7 +220,7 @@ class signal_handlers(dbus.service.Object):
 
         # use UI to get new filename from user
         name = show_naming_GUI(content_type, (path.split("/"))[-1])
-        
+
         # the case where the user exited instead of entering a filename
         if name[-1] == 1:
             return 1
@@ -232,7 +232,7 @@ class signal_handlers(dbus.service.Object):
             eprint(e)
 
         return 0
-    
+
     def _remove_leading_file_URI(self, file_name):
         '''removes file:// in prep for renaming'''
         file_name = str(file_name)
@@ -606,7 +606,7 @@ def killer_signal_handler(signal, frame):
 if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
-    VERSION = "0.1.5-alpha1"
+    VERSION = "0.1.6-alpha1"
     HELP = """xfce4-desktop-service, Version: %s
 
     -b, --background        Start service in the background.
