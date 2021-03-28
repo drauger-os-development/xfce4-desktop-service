@@ -342,6 +342,15 @@ class naming_GUI(Gtk.Window):
 
     Character `/' not allowed in %s names.\t""" % (self.content_type,
                                                    self.content_type))
+        elif (("\0" in self.set_name[0]) or ("\x00" in self.set_name[0])):
+            self.label.set_markup("""
+    What would you like to name this %s?\t
+
+    <b>Null Character not allowed in %s names.</b>\t
+    You likely have either '\\0' or '\\x00' in your %s name.\t
+    Please remove it to continue.\t""" % (self.content_type,
+                                          self.content_type,
+                                          self.content_type))
 
         elif self.set_name[0] in ("", None):
             self.label.set_markup("""
@@ -606,7 +615,7 @@ def killer_signal_handler(signal, frame):
 if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
-    VERSION = "0.1.6-alpha1"
+    VERSION = "0.1.7-alpha1"
     HELP = """xfce4-desktop-service, Version: %s
 
     -b, --background        Start service in the background.
