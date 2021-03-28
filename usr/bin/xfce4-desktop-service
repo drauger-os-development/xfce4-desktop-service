@@ -342,8 +342,8 @@ class naming_GUI(Gtk.Window):
             self.label.set_markup("""
     What would you like to name this %s?\t
 
-    Character `/' not allowed in %s names.\t""" % (self.content_type,
-                                                   self.content_type))
+    <b>Character `/' not allowed in %s names.</b>\t""" % (self.content_type,
+                                                          self.content_type))
         elif (("\0" in self.set_name[0]) or ("\x00" in self.set_name[0])):
             self.label.set_markup("""
     What would you like to name this %s?\t
