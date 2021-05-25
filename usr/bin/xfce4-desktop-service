@@ -3,7 +3,7 @@
 #
 #  xfce4-desktop-service
 #
-#  Copyright 2020 Thomas Castleman <contact@draugeros.org>
+#  Copyright 2021 Thomas Castleman <contact@draugeros.org>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -54,6 +54,28 @@ octal_perms = {0: "No Permissions",
                7: "Full Permissions"}
 # PID File location
 pid_file = "/tmp/xfce4-desktop-service.pid"
+
+
+class GUI_defaults(Gtk.Window):
+    """Default Window functions"""
+    def __init__(self):
+        pass
+
+    def exit(self, message):
+        pass
+
+    def on_key_press_event(self, widget, event):
+        """Handles keyy press events for window"""
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit("esc key pressed")
+
+    def _set_default_margins(self, widget):
+        """Set default margin size"""
+        widget.set_margin_start(10)
+        widget.set_margin_end(10)
+        widget.set_margin_top(10)
+        widget.set_margin_bottom(10)
+        return widget
 
 
 class signal_handlers(dbus.service.Object):
@@ -275,7 +297,7 @@ class signal_handlers(dbus.service.Object):
 
         os.rename(old_absolute_filename, new_path)
 
-class naming_GUI(Gtk.Window):
+class naming_GUI(GUI_defaults):
     """UI for naming Files/Folders"""
     def __init__(self, content_type, name):
         if content_type == "inode/directory":
@@ -301,6 +323,7 @@ class naming_GUI(Gtk.Window):
         self.label.set_markup("""
     What would you like to name this %s?\t""" % (content_type))
         self.label.set_justify(Gtk.Justification.LEFT)
+        self.label = self._set_default_margins(self.label)
         self.grid.attach(self.label, 1, 1, 3, 1)
 
         self.name = Gtk.Entry()
@@ -308,6 +331,7 @@ class naming_GUI(Gtk.Window):
         self.name.set_can_default(False)
         self.name.set_can_focus(True)
         self.name.set_activates_default(True)
+        self.name = self._set_default_margins(self.name)
         self.grid.attach(self.name, 1, 2, 3, 1)
         self.name.grab_focus()
 
@@ -317,11 +341,13 @@ class naming_GUI(Gtk.Window):
         button1 = Gtk.Button.new_with_label("Okay -->")
         button1.connect("clicked", self.done)
         button1.set_can_default(True)
+        button1 = self._set_default_margins(button1)
         self.grid.attach(button1, 3, 3, 1, 1)
 
         button2 = Gtk.Button.new_with_label("Exit")
         button2.connect("clicked", self.exit)
         button2.set_can_default(False)
+        button2 = self._set_default_margins(button2)
         self.grid.attach(button2, 1, 3, 1, 1)
 
         self.set_name = None
@@ -329,11 +355,6 @@ class naming_GUI(Gtk.Window):
         self.set_default(button1)
         # button1.grab_default() would be the preferred way to set default
         # but that function does not seem to work properly at this time
-
-    def on_key_press_event(self, widget, event):
-        """Handles keyy press events for window"""
-        if event.keyval == Gdk.KEY_Escape:
-            self.exit("esc key pressed")
 
     def done(self, button):
         """Return Data"""
@@ -373,7 +394,7 @@ class naming_GUI(Gtk.Window):
         Gtk.main_quit("delete-event")
         return self.set_name
 
-class properties_GUI(Gtk.Window):
+class properties_GUI(GUI_defaults):
     """Properties GUI"""
     def __init__(self, file_path):
         """Initialize Properties GUI"""
@@ -405,60 +426,65 @@ class properties_GUI(Gtk.Window):
 
         self.main()
 
-    def on_key_press_event(self, widget, event):
-        """Handles keyy press events for window"""
-        if event.keyval == Gdk.KEY_Escape:
-            self.exit("esc key pressed")
-
     def main(self):
         """Main properties window"""
         self.stack = Gtk.Stack()
         self.stack.add_titled(self.page0, "page0", "Basic")
         self.stack.add_titled(self.page1, "page1", "Permissions")
+        self.stack = self._set_default_margins(self.stack)
         self.grid.attach(self.stack, 1, 2, 4, 1)
 
         self.stack_switcher = Gtk.StackSwitcher()
         self.stack_switcher.set_stack(self.stack)
+        self.stack_switcher = self._set_default_margins(self.stack_switcher)
         self.grid.attach(self.stack_switcher, 2, 1, 2, 1)
 
         self.label = Gtk.Label()
         self.label.set_markup("""\n\tName:\t""")
         self.label.set_justify(Gtk.Justification.LEFT)
+        self.label = self._set_default_margins(self.label)
         self.page0.attach(self.label, 1, 1, 1, 1)
 
         self.label1 = Gtk.Label()
         self.label1.set_markup("\n\t" + self.file_name + "\t")
         self.label1.set_justify(Gtk.Justification.LEFT)
+        self.label1 = self._set_default_margins(self.label1)
         self.page0.attach(self.label1, 2, 1, 1, 1)
 
         self.label2 = Gtk.Label()
         self.label2.set_markup("""\n\tType:\t""")
         self.label2.set_justify(Gtk.Justification.LEFT)
+        self.label2 = self._set_default_margins(self.label2)
         self.page0.attach(self.label2, 1, 2, 1, 1)
 
         self.label3 = Gtk.Label()
         self.label3.set_markup("\n\t" + self.file_mime + "\t")
         self.label3.set_justify(Gtk.Justification.LEFT)
+        self.label3 = self._set_default_margins(self.label3)
         self.page0.attach(self.label3, 2, 2, 1, 1)
 
         self.label4 = Gtk.Label()
         self.label4.set_markup("""\n\tLocation:\t""")
         self.label4.set_justify(Gtk.Justification.LEFT)
+        self.label4 = self._set_default_margins(self.label4)
         self.page0.attach(self.label4, 1, 3, 1, 1)
 
         self.label5 = Gtk.Label()
         self.label5.set_markup("\n\t" + self.file_path + "\t")
         self.label5.set_justify(Gtk.Justification.LEFT)
+        self.label5 = self._set_default_margins(self.label5)
         self.page0.attach(self.label5, 2, 3, 1, 1)
 
         self.label6 = Gtk.Label()
         self.label6.set_markup("""\n\tOwner:\t""")
         self.label6.set_justify(Gtk.Justification.LEFT)
+        self.label6 = self._set_default_margins(self.label6)
         self.page1.attach(self.label6, 1, 1, 1, 1)
 
         self.label7 = Gtk.Label()
         self.label7.set_markup("\n\t" + self.file_owner + "\t")
         self.label7.set_justify(Gtk.Justification.LEFT)
+        self.label7 = self._set_default_margins(self.label7)
         self.page1.attach(self.label7, 2, 1, 1, 1)
 
         perms = translate_full_octal(self.file_permissions)
@@ -469,26 +495,31 @@ class properties_GUI(Gtk.Window):
         self.label8 = Gtk.Label()
         self.label8.set_markup("""\n\tOwner\n\tPermissions:\t""")
         self.label8.set_justify(Gtk.Justification.LEFT)
+        self.label8 = self._set_default_margins(self.label8)
         self.page1.attach(self.label8, 1, 2, 1, 1)
 
         self.label9 = Gtk.Label()
         self.label9.set_markup("\n\t" + owner_perms + "\t")
         self.label9.set_justify(Gtk.Justification.LEFT)
+        self.label9 = self._set_default_margins(self.label9)
         self.page1.attach(self.label9, 2, 2, 1, 1)
 
         self.label10 = Gtk.Label()
         self.label10.set_markup("""\n\tGroup:\t""")
         self.label10.set_justify(Gtk.Justification.LEFT)
+        self.label10 = self._set_default_margins(self.label10)
         self.page1.attach(self.label10, 1, 3, 1, 1)
 
         self.label11 = Gtk.Label()
         self.label11.set_markup("\n\t" + self.file_group + "\t")
         self.label11.set_justify(Gtk.Justification.LEFT)
+        self.label11 = self._set_default_margins(self.label11)
         self.page1.attach(self.label11, 2, 3, 1, 1)
 
         self.label12 = Gtk.Label()
         self.label12.set_markup("""\n\tGroup\n\tPermissions:\t""")
         self.label12.set_justify(Gtk.Justification.LEFT)
+        self.label12 = self._set_default_margins(self.label12)
         self.page1.attach(self.label12, 1, 4, 1, 1)
 
         self.label13 = Gtk.Label()
@@ -498,20 +529,24 @@ class properties_GUI(Gtk.Window):
 
         self.label14 = Gtk.Label()
         self.label14.set_markup("""\n\tPublic\n\tPermissions:\t""")
-        self.label12.set_justify(Gtk.Justification.LEFT)
+        self.label14.set_justify(Gtk.Justification.LEFT)
+        self.label14 = self._set_default_margins(self.label14)
         self.page1.attach(self.label14, 1, 5, 1, 1)
 
         self.label15 = Gtk.Label()
         self.label15.set_markup("\n\t" + public_perms + "\t")
         self.label15.set_justify(Gtk.Justification.LEFT)
+        self.label15 = self._set_default_margins(self.label15)
         self.page1.attach(self.label15, 2, 5, 1, 1)
 
         self.button1 = Gtk.Button.new_with_label("Delete")
         self.button1.connect("clicked", self.delete)
+        self.button1 = self._set_default_margins(self.button1)
         self.grid.attach(self.button1, 4, 3, 1, 1)
 
         self.button2 = Gtk.Button.new_with_label("Exit")
         self.button2.connect("clicked", self.exit)
+        self.button2 = self._set_default_margins(self.button2)
         self.grid.attach(self.button2, 1, 3, 1, 1)
 
     def delete(self, button):
@@ -617,7 +652,7 @@ def killer_signal_handler(signal, frame):
 if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
-    VERSION = "0.1.7-alpha1"
+    VERSION = "0.1.8-alpha1"
     HELP = """xfce4-desktop-service, Version: %s
 
     -b, --background        Start service in the background.
