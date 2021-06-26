@@ -37,6 +37,7 @@ import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 import gi
 import magic
+import psutil
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 from gi.repository import GLib, Gtk, Gdk
@@ -53,7 +54,7 @@ octal_perms = {0: "No Permissions",
                6: "Read, Write",
                7: "Full Permissions"}
 # PID File location
-pid_file = "/tmp/xfce4-desktop-service.pid"
+proc_name = "xfce4-desktop-service"
 
 
 class GUI_defaults(Gtk.Window):
@@ -644,15 +645,42 @@ def translate_full_octal(octal):
     return output
 
 
-def killer_signal_handler(signal, frame):
-    """Handle Closing signals"""
-    os.remove(pid_file)
+def launch():
+    """Launch xfce4-desktop-service"""
+    # Check in psutil if process is already running
+    # if not, launch.
+    # if so, error out
+    pids = get_running_pids()
+    if len(pids) == 0:
+        File_Manager()
+
+
+def get_running_pids():
+    """Get pids of all running xfce4-desktop-service instances
+
+    Returns an empty list of not running
+    """
+    pids = []
+    for each in psutil.process_iter():
+        if each.name() == proc_name:
+            pids.append(each.pid())
+
+
+
+def set_procname(name):
+    """Set proc name"""
+    from ctypes import cdll, byref, create_string_buffer
+    libc = cdll.LoadLibrary("libc.so.6")
+    buff = create_string_buffer(len(name) + 1)
+    buff.value = name
+    libc.prctl(15, byref(buff), 0, 0, 0)
 
 
 if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
-    VERSION = "0.1.8-alpha1"
+    set_procname(proc_name)
+    VERSION = "0.1.9-alpha1"
     HELP = """xfce4-desktop-service, Version: %s
 
     -b, --background        Start service in the background.
@@ -662,31 +690,24 @@ if __name__ == '__main__':
 
     Pass nothing to start the desktop service on the current process.""" % (VERSION)
     if argc <= 1:
-        if not os.path.isfile(pid_file):
-            with open(pid_file, "w+") as file:
-                file.write(str(os.getpid()))
-        File_Manager()
+        launch()
     elif ((argv[1] == "-h") or (argv[1] == "--help")):
         print(HELP)
     elif ((argv[1] == "-v") or (argv[1] == "--version")):
         print(VERSION)
     elif ((argv[1] == "-b") or (argv[1] == "--background")):
-        process = Popen("xfce4-desktop-service")
-        with open(pid_file, "w+") as file:
-            file.write(str(process.pid))
+        process = Popen("xfce4-desktop-service
     elif ((argv[1] == "-k") or (argv[1] == "--kill")):
-        if not os.path.isfile(pid_file):
+        # Get pids of running processes.
+        pids = get_running_pids()
+        if len(pids) == 0:
             eprint("ERROR: No currently running background process.")
             exit(2)
-        with open(pid_file, "r") as file:
-            pid = file.read()
         try:
-            os.kill(int(pid), signal.SIGTERM)
+            for pid in pids:
+                os.kill(int(pid), signal.SIGTERM)
         except ProcessLookupError:
-            eprint("ERROR: No currently running background process.")
-            os.remove(pid_file)
-            exit(2)
-        os.remove(pid_file)
+            eprint("ERROR: pid %s not valid.")
     else:
         eprint("%s :  argument not recognized" % (argv[1]))
         print(HELP)
