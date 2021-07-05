@@ -727,7 +727,7 @@ if __name__ == '__main__':
     elif ((argv[1] == "-v") or (argv[1] == "--version")):
         print(VERSION)
     elif ((argv[1] == "-b") or (argv[1] == "--background")):
-        process = Popen("xfce4-desktop-service
+        process = Popen("xfce4-desktop-service")
     elif ((argv[1] == "-k") or (argv[1] == "--kill")):
         # Get pids of running processes.
         pids = get_running_pids()
