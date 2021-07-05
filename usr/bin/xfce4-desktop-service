@@ -55,6 +55,7 @@ octal_perms = {0: "No Permissions",
                7: "Full Permissions"}
 # PID File location
 proc_name = "xfce4-desktop-service"
+HOME = os.getenv("HOME")
 VERSION = "0.2.0-alpha2"
 
 
@@ -400,20 +401,20 @@ class properties_GUI(GUI_defaults):
     """Properties GUI"""
     def __init__(self, file_path):
         """Initialize Properties GUI"""
-        self.file_path = file_path
+        self.file_path = file_path.replace(HOME, "~")
         self.file_name = self.file_path.split("/")[-1]
         mime = magic.Magic(mime=True)
 
         try:
-            self.file_mime = mime.from_file(self.file_path)
-            self.file_size = os.path.getsize(self.file_path)
+            self.file_mime = mime.from_file(file_path)
+            self.file_size = os.path.getsize(file_path)
         except IsADirectoryError:
             self.file_mime = "inode/directory"
             self.file_size = None
 
-        self.file_permissions = str(oct(os.stat(self.file_path).st_mode)[-3:])
-        self.file_owner = getpwuid(os.stat(self.file_path).st_uid).pw_name
-        self.file_group = getpwuid(os.stat(self.file_path).st_gid).pw_name
+        self.file_permissions = str(oct(os.stat(file_path).st_mode)[-3:])
+        self.file_owner = getpwuid(os.stat(file_path).st_uid).pw_name
+        self.file_group = getpwuid(os.stat(file_path).st_gid).pw_name
 
         Gtk.Window.__init__(self, title="Desktop Service")
 
@@ -554,9 +555,9 @@ class properties_GUI(GUI_defaults):
     def delete(self, button):
         """Delete current file/folder"""
         try:
-            os.remove(self.file_path)
+            os.remove(self.file_path.replace("~", HOME))
         except IsADirectoryError:
-            rmtree(self.file_path)
+            rmtree(self.file_path.replace("~", HOME))
 
         self.exit("clicked")
 
