@@ -55,6 +55,7 @@ octal_perms = {0: "No Permissions",
                7: "Full Permissions"}
 # PID File location
 proc_name = "xfce4-desktop-service"
+VERSION = "0.2.0-alpha2"
 
 
 class GUI_defaults(Gtk.Window):
@@ -680,7 +681,6 @@ if __name__ == '__main__':
     #get length of argv
     argc = len(argv)
     set_procname(proc_name)
-    VERSION = "0.1.9-alpha1"
     HELP = """xfce4-desktop-service, Version: %s
 
     -b, --background        Start service in the background.
