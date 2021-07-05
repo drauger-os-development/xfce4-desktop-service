@@ -80,6 +80,12 @@ class GUI_defaults(Gtk.Window):
         widget.set_margin_bottom(10)
         return widget
 
+    def clear_window(self):
+        """Clear Window"""
+        children = self.grid.get_children()
+        for each0 in children:
+            self.grid.remove(each0)
+
 
 class signal_handlers(dbus.service.Object):
     """Signal Handlers for DBus"""
@@ -427,9 +433,9 @@ class properties_GUI(GUI_defaults):
         self.add(self.grid)
         self.set_icon_name("desktop-environment-xfce")
 
-        self.main()
+        self.main("clicked")
 
-    def main(self):
+    def main(self, button):
         """Main properties window"""
         self.stack = Gtk.Stack()
         self.stack.add_titled(self.page0, "page0", "Basic")
@@ -553,6 +559,30 @@ class properties_GUI(GUI_defaults):
         self.grid.attach(self.button2, 1, 3, 1, 1)
 
     def delete(self, button):
+        """Confirm file/folder deletion"""
+        self.clear_window()
+
+        if self.file_mime == "inode/directory":
+            text = """Are you sure you want to delete this directory?"""
+        else:
+            text = """Are you sure you want to delete this file?"""
+        label = Gtk.Label()
+        label.set_markup(text)
+        label.set_justify(Gtk.Justification.LEFT)
+        label = self._set_default_margins(label)
+        self.grid.attach(label, 1, 1, 2, 1)
+
+        self.button1 = Gtk.Button.new_with_label("Delete")
+        self.button1.connect("clicked", self.delete_action)
+        self.button1 = self._set_default_margins(self.button1)
+        self.grid.attach(self.button1, 2, 2, 1, 1)
+
+        self.button2 = Gtk.Button.new_with_label("Cancel")
+        self.button2.connect("clicked", self.main)
+        self.button2 = self._set_default_margins(self.button2)
+        self.grid.attach(self.button2, 1, 2, 1, 1)
+
+    def delete_action(self, button):
         """Delete current file/folder"""
         try:
             os.remove(self.file_path.replace("~", HOME))
