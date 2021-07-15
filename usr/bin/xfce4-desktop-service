@@ -56,7 +56,7 @@ octal_perms = {0: "No Permissions",
 # PID File location
 proc_name = "xfce4-desktop-service"
 HOME = os.getenv("HOME")
-VERSION = "0.2.1-alpha2"
+VERSION = "0.2.2-alpha2"
 
 
 class GUI_defaults(Gtk.Window):
@@ -616,7 +616,6 @@ def xdg_open(uri):
 def File_Manager():
     """Start up DBus listeners"""
     try:
-        signal.signal(signal.SIGTERM, killer_signal_handler)
         DBusGMainLoop(set_as_default=True)
 
         bus = dbus.SessionBus()
@@ -626,7 +625,7 @@ def File_Manager():
         mainloop = GLib.MainLoop()
         mainloop.run()
     except:
-        killer_signal_handler("", "")
+        pass
 
 def show_naming_GUI(content_type, file_name):
     """Show the Naming GUI"""
@@ -696,6 +695,8 @@ def get_running_pids():
     for each in psutil.process_iter():
         if each.name() == proc_name:
             pids.append(each.pid())
+    if pids is None:
+        pids = []
     return pids
 
 
