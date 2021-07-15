@@ -696,6 +696,7 @@ def get_running_pids():
     for each in psutil.process_iter():
         if each.name() == proc_name:
             pids.append(each.pid())
+    return pids
 
 
 
