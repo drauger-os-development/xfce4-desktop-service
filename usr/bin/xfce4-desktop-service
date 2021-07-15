@@ -56,7 +56,7 @@ octal_perms = {0: "No Permissions",
 # PID File location
 proc_name = "xfce4-desktop-service"
 HOME = os.getenv("HOME")
-VERSION = "0.2.0-alpha2"
+VERSION = "0.2.1-alpha2"
 
 
 class GUI_defaults(Gtk.Window):
@@ -704,7 +704,7 @@ def set_procname(name):
     from ctypes import cdll, byref, create_string_buffer
     libc = cdll.LoadLibrary("libc.so.6")
     buff = create_string_buffer(len(name) + 1)
-    buff.value = name
+    buff.value = name.encode()
     libc.prctl(15, byref(buff), 0, 0, 0)
 
 
