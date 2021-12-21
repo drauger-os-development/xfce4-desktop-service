@@ -250,6 +250,10 @@ class signal_handlers(dbus.service.Object):
                 if show_error_GUI(True):
                     self.CreateFile(parent_directory, "inode/directory", 0, 0)
         else:
+            if os.path.isfile(parent_directory + "/" + file_name):
+                if show_error_GUI(False):
+                    self.CreateFile(parent_directory, "file", 0, 0)
+                return
             try:
                 with open(parent_directory + "/" + file_name, "w+") as new_file:
                     new_file.write("")
