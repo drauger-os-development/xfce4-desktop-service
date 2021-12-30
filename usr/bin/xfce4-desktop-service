@@ -537,8 +537,8 @@ class choosing_dialog():
                         del cmd[cmd.index("%u")]
                 subprocess.Popen(cmd)
             else:
-                # set as default for Mime type
-                pass
+                file_type = self.file_path.split(".")[-1]
+                app_info.set_as_default_for_extension(file_type)
 
         dialog.destroy()
 
