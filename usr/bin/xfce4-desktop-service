@@ -25,7 +25,7 @@
 
 This service provides desktop icon's functionality in the absence of Thunar
 """
-from subprocess import Popen
+import subprocess
 from sys import argv, stderr
 from shutil import copyfile, rmtree, SameFileError
 from ctypes import cdll, byref, create_string_buffer
@@ -41,8 +41,7 @@ import magic
 import psutil
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import GLib, Gtk, Gdk
-
+from gi.repository import GLib, Gtk, Gdk, Gio
 
 
 # Octal Translation Dict
@@ -56,17 +55,15 @@ octal_perms = {0: "No Permissions",
                7: "Full Permissions"}
 # PID File location
 proc_name = "xfce4-desktop-service"
-HOME = os.getenv("HOME")
-VERSION = "0.2.3-alpha2"
+HOME = os.environ["HOME"]
+VERSION = "0.2.4-alpha2"
 
 
 class GUI_defaults(Gtk.Window):
     """Default Window functions"""
-    def __init__(self):
-        pass
-
     def exit(self, message):
-        pass
+        self.destroy()
+        Gtk.main_quit("delete-event")
 
     def on_key_press_event(self, widget, event):
         """Handles keyy press events for window"""
@@ -189,11 +186,19 @@ class signal_handlers(dbus.service.Object):
         if result == 1:
             self.UnlinkFiles("", [parent_directory], "", "")
 
+    @dbus.service.method("org.xfce.FileManager", in_signature='sbss', out_signature='')
+    def DisplayChooserDialog(self, path, to_open, display, startup_id):
+        """Disaply Application Chooser Dialog"""
+        if path.startswith('file://'):
+            path = path[7:]
+        path = urllib.parse.unquote(path)
+        choosing_dialog(path, to_open)
+
 
     @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
     def DisplayTrash(self, display, startup_id):
         """Open Trash folder"""
-        Popen(["xdg-open", "trash://"])
+        subprocess.Popen(["xdg-open", "trash://"])
 
     @dbus.service.method("org.xfce.Trash", in_signature='asss', out_signature='')
     def MoveToTrash(self, filenames, display, startup_id):
@@ -206,7 +211,7 @@ class signal_handlers(dbus.service.Object):
             path = urllib.parse.unquote(path)
             args.append(path)
             if os.fork() == 0:
-                Popen(args)
+                subprocess.Popen(args)
                 args = ["gio", "trash"]
                 os._exit(0)
             else:
@@ -216,7 +221,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.Trash", in_signature='ss', out_signature='')
     def EmptyTrash(self, display, startup_id):
         """Empty trash"""
-        Popen(["gio", "trash", "--empty"])
+        subprocess.Popen(["gio", "trash", "--empty"])
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def DisplayFileProperties(self, uri, display, startup_id):
@@ -487,6 +492,56 @@ class naming_GUI(GUI_defaults):
         Gtk.main_quit("delete-event")
         return self.set_name
 
+
+class choosing_dialog():
+    """Choose Non-Default Application to open file with"""
+    def __init__(self, file_path, to_open):
+        """Initialize"""
+        # Initialize the window
+        self.file_path = file_path
+        self.to_open = to_open
+        file = Gio.File.new_for_path(file_path)
+        app_chooser = Gtk.AppChooserDialog.new(None,
+                                               Gtk.DialogFlags.MODAL,
+                                               file)
+        app_chooser.connect("response", self.on_response)
+        app_chooser.set_heading("Select which app to open the file with from the list below")
+        app_chooser.show_all()
+
+    def on_response(self, dialog, response):
+        if response == Gtk.ResponseType.OK:
+            app_info = dialog.get_app_info()
+            if self.to_open:
+                cmd = app_info.get_commandline().split(" ")
+                replaced = False
+                if "%F" in cmd:
+                    cmd[cmd.index("%F")] = self.file_path
+                    replaced = True
+                if "%f" in cmd:
+                    if not replaced:
+                        cmd[cmd.index("%f")] = self.file_path
+                        replaced = True
+                    else:
+                        del cmd[cmd.index("%f")]
+                if "%U" in cmd:
+                    if not replaced:
+                        cmd[cmd.index("%U")] = self.file_path
+                        replaced = True
+                    else:
+                        del cmd[cmd.index("%U")]
+                if "%u" in cmd:
+                    if not replaced:
+                        cmd[cmd.index("%u")] = self.file_path
+                        replaced = True
+                    else:
+                        del cmd[cmd.index("%u")]
+                subprocess.Popen(cmd)
+            else:
+                # set as default for Mime type
+                pass
+
+        dialog.destroy()
+
 class properties_GUI(GUI_defaults):
     """Properties GUI"""
     def __init__(self, file_path):
@@ -692,7 +747,7 @@ def xdg_open(uri):
         path = " ".join(path)
     args.append(path)
     if os.fork() == 0:
-        Popen(args)
+        subprocess.Popen(args)
         os._exit(0)
     else:
         os.wait()
@@ -825,7 +880,7 @@ if __name__ == '__main__':
     elif ((argv[1] == "-v") or (argv[1] == "--version")):
         print(VERSION)
     elif ((argv[1] == "-b") or (argv[1] == "--background")):
-        process = Popen("xfce4-desktop-service")
+        process = subprocess.Popen("xfce4-desktop-service")
     elif ((argv[1] == "-k") or (argv[1] == "--kill")):
         # Get pids of running processes.
         pids = get_running_pids()
