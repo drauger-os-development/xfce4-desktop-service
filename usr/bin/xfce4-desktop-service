@@ -312,6 +312,17 @@ class signal_handlers(dbus.service.Object):
 
         os.rename(old_absolute_filename, new_path)
 
+    @dbus.service.method("org.xfce.FileManager", in_signature='sassss', out_signature='')
+    def MoveInto(self, working_directory, source_filenames, target_filename, display, startup_id):
+        """Move files into a given directory"""
+        src = parse_uri(source_filenames[0])
+        target = parse_uri(target_filename)
+        try:
+            shutil.move(src, target)
+        except (OSError, PermissionError) as e:
+            eprint("Cannot Move File or Directory: Permission or OS Error")
+            eprint("You either do not have permission to write to this directory, or the directory is read-only.")
+
 
 class error_GUI(GUI_defaults):
     """Show errors without crashing the back-end"""
