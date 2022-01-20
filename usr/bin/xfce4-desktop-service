@@ -3,7 +3,7 @@
 #
 #  xfce4-desktop-service
 #
-#  Copyright 2021 Thomas Castleman <contact@draugeros.org>
+#  Copyright 2022 Thomas Castleman <contact@draugeros.org>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ This service provides desktop icon's functionality in the absence of Thunar
 """
 import subprocess
 from sys import argv, stderr
-from shutil import copyfile, rmtree, SameFileError
+from shutil import copyfile, rmtree, SameFileError, copytree
 from ctypes import cdll, byref, create_string_buffer
 from pwd import getpwuid
 import os
@@ -56,7 +56,7 @@ octal_perms = {0: "No Permissions",
 # PID File location
 proc_name = "xfce4-desktop-service"
 HOME = os.environ["HOME"]
-VERSION = "0.2.4-alpha2"
+VERSION = "0.2.5-alpha2"
 
 
 class GUI_defaults(Gtk.Window):
@@ -133,12 +133,8 @@ class signal_handlers(dbus.service.Object):
     def CopyTo(self, working_directory, source_files, target_files, display, startup_id):
         """Copy files from Point A to Point B"""
         for each in range(len(source_files)):
-            if source_files[each][:7] == "file://":
-                source_files[each] = source_files[each][7:]
-            source_files[each] = urllib.parse.unquote(source_files[each])
-            if target_files[each][:7] == "file://":
-                target_files[each] = target_files[each][7:]
-            target_files[each] = urllib.parse.unquote(target_files[each])
+            source_files[each] = parse_uri(source_files[each])
+            target_files[each] = parse_uri(target_files[each])
             try:
                 copyfile(source_files[each], target_files[each])
             except SameFileError:
@@ -163,9 +159,7 @@ class signal_handlers(dbus.service.Object):
     def UnlinkFiles(self, working_directory, filenames, display, startup_id):
         """Delete multiple files"""
         for each in filenames:
-            if each[:7] == "file://":
-                each = each[7:]
-            each = urllib.parse.unquote(each)
+            each = parse_uri(each)
             try:
                 os.remove(each)
             except IsADirectoryError:
@@ -174,7 +168,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
         """Rename a file"""
-        filename = urllib.parse.unquote(filename)
+        filename = parse_uri(filename)
         self._custom_rename_file(filename)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
@@ -191,9 +185,7 @@ class signal_handlers(dbus.service.Object):
     @dbus.service.method("org.xfce.FileManager", in_signature='sbss', out_signature='')
     def DisplayChooserDialog(self, path, to_open, display, startup_id):
         """Disaply Application Chooser Dialog"""
-        if path.startswith('file://'):
-            path = path[7:]
-        path = urllib.parse.unquote(path)
+        path = parse_uri(path)
         choosing_dialog(path, to_open)
 
 
@@ -208,9 +200,7 @@ class signal_handlers(dbus.service.Object):
         args = ["gio", "trash"]
         for uri in filenames:
             path = str(uri)
-            if path.startswith('file://'):
-                path = path[7:]
-            path = urllib.parse.unquote(path)
+            path = parse_uri(path)
             args.append(path)
             if os.fork() == 0:
                 subprocess.Popen(args)
@@ -229,9 +219,7 @@ class signal_handlers(dbus.service.Object):
     def DisplayFileProperties(self, uri, display, startup_id):
         """Show file properties"""
         path = str(uri)
-        if path.startswith('file://'):
-            path = path[7:]
-        path = urllib.parse.unquote(path)
+        path = parse_uri(path)
         show_properties_GUI(path)
 
     def _custom_create_file(self, parent_directory, file_name, is_directory):
@@ -243,9 +231,7 @@ class signal_handlers(dbus.service.Object):
         if isinstance(file_name, list):
             file_name = file_name[0]
 
-        if parent_directory[:7] == "file://":
-            parent_directory = parent_directory[7:]
-        parent_directory = urllib.parse.unquote(parent_directory)
+        parent_directory = parse_uri(parent_directory)
 
         if is_directory:
             try:
@@ -275,7 +261,7 @@ class signal_handlers(dbus.service.Object):
     def _custom_rename_file(self, file_name):
         '''renames a file'''
         # prep for naming GUI
-        path = self._remove_leading_file_URI(file_name)
+        path = parse_uri(file_name)
         content_type = self._find_content_type(path)
 
         # use UI to get new filename from user
@@ -294,18 +280,6 @@ class signal_handlers(dbus.service.Object):
             return 1
 
         return 0
-
-    def _remove_leading_file_URI(self, file_name):
-        '''removes file:// in prep for renaming'''
-        file_name = str(file_name)
-
-        # remove leading "file://"" if present
-        if file_name.startswith('file://'):
-            path = file_name[7:]
-        else:
-            path = file_name
-
-        return urllib.parse.unquote(path)
 
     def _find_content_type(self, path):
         '''determines if path is directory or file for renaming'''
@@ -742,8 +716,7 @@ def xdg_open(uri):
     """Open the URI using the default method"""
     args = ['xdg-open']
     path = str(uri)
-    if path.startswith('file://'):
-        path = path[7:]
+    path = parse_uri(path)
     if "%20" in path:
         path = path.split("%20")
         path = " ".join(path)
@@ -853,6 +826,12 @@ def get_running_pids():
         pids = []
     return pids
 
+
+def parse_uri(uri):
+    """Translate URIs to file paths"""
+    path = urllib.parse.urlparse(uri)[2]
+    path = urllib.parse.unquote(path)
+    return path
 
 
 def set_procname(name):
