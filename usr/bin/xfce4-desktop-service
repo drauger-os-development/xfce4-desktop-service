@@ -143,6 +143,8 @@ class signal_handlers(dbus.service.Object):
                 copyfile(source_files[each], target_files[each])
             except SameFileError:
                 pass
+            except IsADirectoryError:
+                copytree(source_files[each], target_files[each])
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFile(self, parent_directory, content_type, display, startup_id):
