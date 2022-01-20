@@ -1,5 +1,6 @@
 [Desktop Entry]
-Name=xfce4-desktop-service
+Name=Xfce4 Desktop Service
+Comment=Desktop Interaction Services for Xfce
 Version=1.0
 Exec=/usr/share/xfce4-desktop-service/autostart.py
 Type=Application
