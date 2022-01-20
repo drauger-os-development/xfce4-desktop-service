@@ -56,7 +56,7 @@ octal_perms = {0: "No Permissions",
 # PID File location
 proc_name = "xfce4-desktop-service"
 HOME = os.environ["HOME"]
-VERSION = "0.2.5-alpha2"
+VERSION = "0.2.6-alpha2"
 
 
 class GUI_defaults(Gtk.Window):
