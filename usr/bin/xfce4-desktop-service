@@ -27,7 +27,7 @@ This service provides desktop icon's functionality in the absence of Thunar
 """
 import subprocess
 from sys import argv, stderr
-from shutil import copyfile, rmtree, SameFileError, copytree
+import shutil
 from ctypes import cdll, byref, create_string_buffer
 from pwd import getpwuid
 import os
@@ -136,11 +136,11 @@ class signal_handlers(dbus.service.Object):
             source_files[each] = parse_uri(source_files[each])
             target_files[each] = parse_uri(target_files[each])
             try:
-                copyfile(source_files[each], target_files[each])
-            except SameFileError:
+                shutil.copyfile(source_files[each], target_files[each])
+            except shutil.SameFileError:
                 pass
             except IsADirectoryError:
-                copytree(source_files[each], target_files[each])
+                shutil.copytree(source_files[each], target_files[each])
 
     @dbus.service.method("org.xfce.FileManager", in_signature='ssss', out_signature='')
     def CreateFile(self, parent_directory, content_type, display, startup_id):
@@ -163,7 +163,7 @@ class signal_handlers(dbus.service.Object):
             try:
                 os.remove(each)
             except IsADirectoryError:
-                rmtree(each)
+                shutil.rmtree(each)
 
     @dbus.service.method("org.xfce.FileManager", in_signature='sss', out_signature='')
     def RenameFile(self, filename, display, startup_id):
@@ -713,7 +713,7 @@ class properties_GUI(GUI_defaults):
         try:
             os.remove(self.file_path.replace("~", HOME))
         except IsADirectoryError:
-            rmtree(self.file_path.replace("~", HOME))
+            shutil.rmtree(self.file_path.replace("~", HOME))
 
         self.exit("clicked")
 
